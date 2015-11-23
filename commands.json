@@ -1,0 +1,106 @@
+{
+  "commands": {
+    "ludd": {
+      "type": "Ludd"
+    },
+    "flip": {
+      "type": "Coinflip",
+      "choices": [
+        "heads",
+        "tails"
+      ],
+      "message": "It came up {result}!"
+    },
+    "roll": {
+      "type": "Roll",
+      "options": {
+        "min": 1,
+        "max": 20
+      }
+    },
+    "quote": {
+      "type": "Random",
+      "choices": [
+        "\"I am cheap and good!\" \n-Anton Werelius 2015",
+        "\"Clop is the best!\" \n-Simon Ejdre 2015",
+        "\"It's hard to write when you don't know what you are something\" \n-(High) Ludvig Löfberg 2015",
+        "\"I just tried walking.\nIt did not work out the way I wanted it to\nI imidiatly walked into a wall\nSo I went back to bed\" \n-(High) Ludvig 2015",
+        "\"http://i.imgur.com/2niaxlx.png",
+        "\"I've lost my dad in ikea please help\" \n-Some guy on /r/askreddit",
+        "\"I'm in lampshades\" \n-Some guy on /r/askreddit",
+        "\"A bottle of jar\"\n\"What the fuck did I just write, I ment a jar of dirt\" \n-/u/FapOVERLOAD",
+        "\"We have to keep cloning [Scootaloo] from the mirror pool because she has a habit of throwing herself off cliffs to see if she can fly\"",
+        "\"Oracle has picked Oracle has picked Oracle has picked Oracle has picked Oracle has picked Oracle has picked Oracle has picked Oracle\" \n-Ludvig Karlsson",
+        "\"It's harder to talk with a dick in your mouth\" \n-Strippin",
+        "http://i.imgur.com/YIWMv7U.png",
+        "http://i.imgur.com/NnAWmp3.png\nYES -Kotaku",
+        "http://i.imgur.com/koozeHN.png",
+        "http://i.imgur.com/YGHUzeG.png",
+        "http://i.imgur.com/gc1usV4.png",
+		"\"Rubick is a useless hero\" \nSome retard on Dota2",
+		"\"Just like- \nUuh- \nWhat your- \nMy daad- \nI did to your mom last night!\nOOOOOOOOO\" \n-Adam Haglund 2014",
+		"\"Why do you follow HentaiDude??\"\n\"He... makes good... music...\"\n-Ludvig Löfberg 2015"
+      ]
+    },
+    "rigged": {
+      "type": "Response",
+      "message": "I am not rigged. I am HarmonyBot."
+    },
+    "loadcommands": {
+      "type": "ReloadCommands"
+    },
+    "love": {
+      "type": "Love"
+    },
+    "getuserids": {
+      "type": "GetUserIDs"
+    },
+    "A": {
+      "type": "Response",
+      "message": "[A] L L I A N C E  I S  N O T  B A C K"
+    },
+    "vp": {
+      "type": "Response",
+      "message": "I'm not even going to dignify that with a response."
+    },
+    "whore": {
+      "type": "Response",
+      "message": "microsoft isn't just a name for a company in this case, {user}"
+    },
+    "remindme": {
+      "type":"RemindMe"
+    },
+    "rekt": {
+      "type":"Response",
+      "message":":exclamation: Not rekt\n☑ Rekt\n☑ Really Rekt\n☑ Tyrannosaurus Rekt\n☑ Cash4Rekt.com\n☑ Grapes of Rekt\n☑ Ship Rekt\n☑ Rekt markes the spot\n☑ Caught rekt handed\n☑ The Rekt Side Story\n☑ Singin' In The Rekt",
+      "doFormat":false
+    }
+  },
+  "keywords": {
+    "cloud": {
+      "type": "Response",
+      "message": "butt*"
+    },
+    "cheating on me": {
+      "type": "Response",
+      "message": "I'd never!"
+    },
+    "cheating on you": {
+      "type": "Response",
+      "message": "I'd never!"
+    },
+    "audiot": {
+      "type": "PlaySound",
+      "file": "JOHNCENA.wav"
+    },
+    "(╯°□°）╯︵ ┻━┻": {
+      "type": "Response",
+      "message": "┬─┬ノ(ಠ_ಠノ) please respect tables"
+    },
+    "lennyface": {
+      "type": "ImageResponse",
+      "image": "lennyface.png",
+      "message": "https://twibbon.blob.core.windows.net/twibbon/2015/197/503dadea-416a-4283-a331-4f6ae5b42e5f.png"
+    }
+  }
+}
