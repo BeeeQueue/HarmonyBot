@@ -25,7 +25,7 @@
 			'userID':  data.userID,
 			'message': data.message,
 			'created': data.created,
-			'date': data.date
+			'date':    data.date
 		};
 
 		reminders[data.time] = rem;

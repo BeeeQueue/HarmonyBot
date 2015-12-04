@@ -13,27 +13,32 @@
  * 115789865286762502 | HarmonyBot
  */
 
+
+// Bot info
 var username = "HarmonyBot",
     email    = "daddatv@live.se",
     password = "discordbot";
 
-var express   = require('express'),
-    app       = express(),
-    http      = require('http').Server(app),
-    fs        = require('fs'),
-    _         = require('underscore'),
-    remindMe  = require('./remindMe'),
-    discordIO = require('discord.io'),
-    bot       = new discordIO({
+// Misc. vars
+// Requires
+var express    = require('express'),
+    app        = express(),
+    http       = require('http').Server(app),
+    fs         = require('fs'),
+    _          = require('underscore'),
+    DiscordIO  = require('discord.io'),
+    ServerInfo = require('./serverInfo'),
+    remindMe   = require('./remindMe'),
+    bot        = new DiscordIO({
 	    email:    email,
 	    password: password,
 	    autorun:  true
     });
 
-var serverID = '114684402830671877',
-    cGeneral = '114684402830671877',
+var stream,
     lastMessageID,
-    lastRandom;
+    lastRandom,
+    playing = false;
 
 var commands = {}, keywords = [];
 
@@ -60,7 +65,7 @@ bot.on('ready', function ()
 		idle_since: null
 	});
 
-	bot.joinVoiceChannel('114684402830671878');
+	console.log(ServerInfo.voiceChannels.afk);
 });
 
 
@@ -160,6 +165,47 @@ function SendMessage (message, id, doFormat)
 	});
 }
 
+function PlaySound (file, channel, callback, finished)
+{
+	var StartPlaying = function ()
+	{
+		bot.testAudio({ channel: channel, stereo: true }, function (streamPar)
+		{
+			stream = streamPar;
+			stream.playAudioFile(file);
+			playing = true;
+			stream.channelID = channel;
+
+			stream.on('fileEnd', function ()
+			{
+				playing = false;
+
+				setTimeout(function ()
+				{
+					bot.leaveVoiceChannel(channel);
+				}, 200);
+
+				if (finished && typeof(finished) === 'function')
+				{
+					finished();
+				}
+			});
+		});
+	};
+
+	if (!playing)
+	{
+		console.log("Joining " + channel + " to play " + file);
+
+		bot.joinVoiceChannel(channel, function ()
+		{
+			currentVoiceChannel = channel;
+			StartPlaying();
+		});
+	}
+}
+
+
 function LoadCommands ()
 {
 	fs.readFile('commands.json', function (err, data)
@@ -182,6 +228,22 @@ function GetRandomInt (min, max)
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function GetVoiceChannels ()
+{
+	var allChannels   = bot.servers[ServerInfo.serverID].channels,
+	    voiceChannels = {};
+
+	for (var i = 0; i < Object.keys(allChannels).length; i++)
+	{
+		if (allChannels[Object.keys(allChannels)[i]].type === "voice")
+		{
+			voiceChannels[Object.keys(allChannels)[i]] = allChannels[Object.keys(allChannels)[i]];
+		}
+	}
+
+	return voiceChannels;
+}
+
 function DateToYYYYMMDD ()
 {
 	var date = new Date(),
@@ -201,8 +263,7 @@ http.listen(3000, function ()
 
 //region Command functions
 
-/*
- *   data variable:
+/*   data variable:
  *   user(name), userID, channelID, commandName
  *   command variables can be found in commands.json
  */
@@ -336,25 +397,152 @@ Love = function (data)
 
 GetUserIDs = function (data)
 {
-	var userIDs = Object.keys(bot.servers[serverID].members);
+	var userIDs = Object.keys(bot.servers[ServerInfo.serverID].members);
 	var message = "";
 
 	for (var i = 0; i < userIDs.length; i++)
 	{
-		message += userIDs[i] + " | " + bot.servers[serverID].members[userIDs[i]].user.username + "\n";
+		message += userIDs[i] + " | " + bot.servers[ServerInfo.serverID].members[userIDs[i]].user.username + "\n";
 	}
 
 	SendMessage(message, data.userID);
 };
 
-PlaySound = function (data)
+PlayAudio = function (data)
 {
-	bot.testAudio("114684402830671878", function (x)
+	var userID        = data.userID,
+	    username      = data.user,
+	    voiceChannels = GetVoiceChannels(),
+	    file,
+	    channelToJoin;
+
+	// Get whole file name
+	if (data.file === undefined)
 	{
-		x.playAudioFile("songs/megalovania.mp3");
-		x.on('fileEnd', function() {
-			SendMessage("Done playing file!", '117026961150312457');
-		});
+		file = data.pars[0];
+		for (var i = 1; i < data.pars.length; i++)
+		{
+			try
+			{
+				file += " " + data.pars[i];
+			} catch (e)
+			{
+				console.log(e);
+			}
+		}
+	}
+	else if (data.file !== undefined && typeof data.file === 'string')
+	{
+		file = data.file;
+	}
+	else if (data.file[1] !== undefined)
+	{
+		var rand = GetRandomInt(0, data.file.length);
+
+		file = data.file[rand];
+	}
+
+	file = "sounds/" + file + ".mp3";
+
+	// Check if already playing a file, queue/deny?
+	if (playing)
+	{
+		SendMessage("Sorry, I'm already playing a file!", data.channelID);
+		return;
+	}
+
+	// Check if file exists
+	fs.exists(file, function (res)
+	{
+		if (res === false)
+		{
+			SendMessage("That file doesn't exist!\nGet a list of all the sounds with !sounds", data.channelID);
+			//return; TODO: remove comment
+		}
+	});
+
+	// Check which, if any, channel the caller is in.
+	for (var j = 0; j < Object.keys(voiceChannels).length; j++)
+	{
+		var channel = voiceChannels[Object.keys(voiceChannels)[j]];
+
+		for (var k = 0; k < Object.keys(channel.members).length; k++)
+		{
+			var memberID = Object.keys(channel.members)[k];
+
+			if (memberID === userID)
+			{
+				console.log(channel.name);
+				channelToJoin = channel.id;
+				break;
+			}
+		}
+
+		if (channelToJoin !== undefined)
+		{
+			break;
+		}
+	}
+
+	PlaySound(file, channelToJoin);
+};
+
+StopAudio = function (data)
+{
+	try
+	{
+		stream.stopAudioFile();
+		playing = false;
+
+		setTimeout(function ()
+		{
+			bot.leaveVoiceChannel(stream.channelID);
+		}, 200);
+	} catch (e)
+	{
+	}
+};
+
+ListCommands = function (data)
+{
+	LoadCommands();
+
+	var message = "",
+	    keys    = Object.keys(commands.commands).sort();
+
+	for (var i = 0; i < keys.length; i++)
+	{
+		if (commands.commands[keys[i]].donotlist !== true)
+		{
+			message += "!" + keys[i] + ": " + commands.commands[keys[i]].desc + "\n";
+		}
+	}
+
+	SendMessage(message, data.channelID);
+};
+
+ListSongs = function (data)
+{
+	var message = "";
+
+	fs.readdir('sounds', function (err, files)
+	{
+		if (!err)
+		{
+			files = files.sort();
+
+			for (var i = 0; i < files.length; i++)
+			{
+				var file = files[i];
+
+				if ((file.lastIndexOf(".mp3") > -1) || (file.lastIndexOf(".wav") > -1))
+				{
+					message += file.substr(0, file.lastIndexOf('.')) + "\n";
+				}
+			}
+
+			SendMessage(message, data.channelID);
+		}
 	});
 };
 

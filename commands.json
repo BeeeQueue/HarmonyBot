@@ -1,7 +1,20 @@
 {
   "commands": {
+    "commands": {
+      "type": "ListCommands",
+      "donotlist": true
+    },
+    "help": {
+      "type": "ListCommands",
+      "donotlist": true
+    },
+    "songs": {
+      "type": "ListSongs",
+      "desc":"Lists all available files!"
+    },
     "ludd": {
-      "type": "Ludd"
+      "type": "Ludd",
+      "desc": "Determines who is the best ludd."
     },
     "flip": {
       "type": "Coinflip",
@@ -9,14 +22,17 @@
         "heads",
         "tails"
       ],
-      "message": "It came up {result}!"
+      "message": "It came up {result}!",
+      "desc": "Flips a coin."
     },
     "roll": {
       "type": "Roll",
       "options": {
         "min": 1,
         "max": 20
-      }
+      },
+      "desc": "[NOT IMPLEMENTED]",
+      "donotlist": true
     },
     "quote": {
       "type": "Random",
@@ -37,43 +53,91 @@
         "http://i.imgur.com/koozeHN.png",
         "http://i.imgur.com/YGHUzeG.png",
         "http://i.imgur.com/gc1usV4.png",
-		"\"Rubick is a useless hero\" \nSome retard on Dota2",
-		"\"Just like- \nUuh- \nWhat your- \nMy daad- \nI did to your mom last night!\nOOOOOOOOO\" \n-Adam Haglund 2014",
-		"\"Why do you follow HentaiDude??\"\n\"He... makes good... music...\"\n-Ludvig Löfberg 2015"
-      ]
+        "\"Rubick is a useless hero\" \nSome retard on Dota 2",
+        "\"Just like- \nUuh- \nWhat your- \nMy daad- \nI did to your mom last night!\nOOOOOOOOO\" \n-Adam Haglund 2014",
+        "\"Why do you follow HentaiDude??\"\n\"He... makes good... music...\"\n-Ludvig Löfberg 2015",
+        "\"ICH LIEBE STRASSE\"\n-Simon Ejdre 2015",
+        "GESCHLECHTSKRANKHEIT"
+      ],
+      "desc": "Displays a random quote!"
+    },
+    "justus": {
+      "type": "Response",
+      "message": "F U C K   O F F   J U S T U S",
+      "desc": "...",
+      "donotlist": true
     },
     "rigged": {
       "type": "Response",
-      "message": "I am not rigged. I am HarmonyBot."
+      "message": "I am not rigged. I am HarmonyBot.",
+      "desc": "Tells the truth"
     },
     "loadcommands": {
-      "type": "ReloadCommands"
+      "type": "ReloadCommands",
+      "donotlist": true
     },
     "love": {
-      "type": "Love"
-    },
-    "getuserids": {
-      "type": "GetUserIDs"
+      "type": "Love",
+      "desc": "...",
+      "donotlist": true
     },
     "A": {
       "type": "Response",
-      "message": "[A] L L I A N C E  I S  N O T  B A C K"
+      "message": "[A] L L I A N C E  I S  B A C K\n                  :D                  ",
+      "desc": "Displays [A]lliance's status!"
     },
     "vp": {
       "type": "Response",
-      "message": "I'm not even going to dignify that with a response."
+      "message": "I'm not even going to dignify that with a response.",
+      "desc": "Fuck 'em"
     },
     "whore": {
       "type": "Response",
-      "message": "microsoft isn't just a name for a company in this case, {user}"
+      "message": "microsoft isn't just a name for a company in this case, {user}",
+      "donotlist": true
     },
     "remindme": {
-      "type":"RemindMe"
+      "type": "RemindMe",
+      "desc": "[NOT IMPLEMENTED]",
+      "donotlist": true
     },
     "rekt": {
-      "type":"Response",
-      "message":":exclamation: Not rekt\n☑ Rekt\n☑ Really Rekt\n☑ Tyrannosaurus Rekt\n☑ Cash4Rekt.com\n☑ Grapes of Rekt\n☑ Ship Rekt\n☑ Rekt markes the spot\n☑ Caught rekt handed\n☑ The Rekt Side Story\n☑ Singin' In The Rekt",
-      "doFormat":false
+      "type": "Response",
+      "message": ":exclamation: Not rekt\n☑ Rekt\n☑ Really Rekt\n☑ Tyrannosaurus Rekt\n☑ Cash4Rekt.com\n☑ Grapes of Rekt\n☑ Ship Rekt\n☑ Rekt markes the spot\n☑ Caught rekt handed\n☑ The Rekt Side Story\n☑ Singin' In The Rekt",
+      "doFormat": false,
+      "desc": "Use if rekt == true"
+    },
+    "play": {
+      "type": "PlayAudio",
+      "desc": "Plays a sound. Usage: !play [file]"
+    },
+    "stop": {
+      "type": "StopAudio",
+      "desc": "Stops the file curently playing"
+    },
+    "tuturu": {
+      "type": "PlayAudio",
+      "file": [
+        "tut",
+        "tut",
+        "tut",
+        "tut",
+        "tut",
+        "jc2"
+      ],
+      "desc": "Tuturu!"
+    },
+    "cena": {
+      "type": "PlayAudio",
+      "file": [
+        "jc",
+        "jc2"
+      ],
+      "desc": "AND HIS NAME IS..."
+    },
+    "getuserids": {
+      "type": "GetUserIDs",
+      "donotlist": true
     }
   },
   "keywords": {
@@ -88,10 +152,6 @@
     "cheating on you": {
       "type": "Response",
       "message": "I'd never!"
-    },
-    "audiot": {
-      "type": "PlaySound",
-      "file": "JOHNCENA.wav"
     },
     "(╯°□°）╯︵ ┻━┻": {
       "type": "Response",
