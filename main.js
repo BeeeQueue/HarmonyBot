@@ -33,7 +33,9 @@ var express    = require('express'),
 	    email:    email,
 	    password: password,
 	    autorun:  true
-    });
+    }),
+    RadioBot = require("./radiobot/RadioBot"),
+    radioBot = new RadioBot();
 
 var stream,
     lastMessageID,
@@ -199,7 +201,6 @@ function PlaySound (file, channel, callback, finished)
 
 		bot.joinVoiceChannel(channel, function ()
 		{
-			currentVoiceChannel = channel;
 			StartPlaying();
 		});
 	}

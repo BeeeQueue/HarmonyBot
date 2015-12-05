@@ -17,9 +17,10 @@ function RadioBot ()
 
 	var commands,
 	    songs,
-	    currentChannel,
 	    lastSong,
-	    stream;
+	    currChan,
+	    stream,
+	    radioOn = true;
 
 	this.StartRadio = function (data)
 	{
@@ -43,32 +44,44 @@ function RadioBot ()
 		});
 	};
 
-	function PlaySongLoop (file, channel)
+	function PlaySong (file, channel)
 	{
-		if (currentChannel !== channel)
+		var StartPlaying = function ()
+		{
+			bot.testAudio({ channel: channel, stereo: true }, function (streamPar)
+			{
+				console.log(file);
+				stream = streamPar;
+				stream.playAudioFile("../sounds/radio/" + file);
+				stream.channelID = channel;
+
+
+				stream.on('fileEnd', function ()
+				{
+					if (radioOn === true)
+					{
+						var newSong = GetRandomInt(0, songs.length - 1);
+						do {
+							newSong = GetRandomInt(0, songs.length - 1);
+						} while (newSong === lastSong);
+
+						PlaySong(songs[newSong], channel);
+					}
+				});
+			});
+		};
+
+		if (currChan !== channel)
 		{
 			bot.joinVoiceChannel(channel, function ()
 			{
-				currentChannel = channel;
-
-				bot.testAudio({ channel: channel, stereo: true }, function (temp)
-				{
-					stream = temp;
-					PlaySongLoop(songs[GetRandomInt(0, songs.length)], channel);
-				});
+				currChan = channel;
+				StartPlaying();
 			});
 		}
 		else
 		{
-			stream.playAudioFile(file);
-
-			stream.on('fileEnd', function ()
-			{
-				if (currentChannel === channel)
-				{
-					PlaySongLoop(songs[GetRandomInt(0, songs.length)], channel);
-				}
-			});
+			StartPlaying();
 		}
 	}
 
@@ -76,12 +89,13 @@ function RadioBot ()
 	{
 		var channelToJoin;
 
-		fs.readdir('sounds/radio', function (err, files)
+		fs.readdir('../sounds/radio', function (err, files)
 		{
 			if (!err)
 			{
 				songs = files;
 
+				//region Channel selection
 				if (data !== undefined && data.userID !== undefined)
 				{
 					// Check which, if any, channel the caller is in.
@@ -110,8 +124,9 @@ function RadioBot ()
 				{
 					channelToJoin = ServerInfo.voiceChannels.bot1;
 				}
+				//endregion
 
-				PlaySongLoop(songs[GetRandomInt(0, songs.length)], channelToJoin);
+				PlaySong(songs[GetRandomInt(0, songs.length - 1)], channelToJoin);
 			}
 			else
 			{
@@ -194,3 +209,4 @@ function RadioBot ()
 }
 
 module.exports = RadioBot;
+RadioBot();
