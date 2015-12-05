@@ -83,7 +83,7 @@
     },
     "A": {
       "type": "Response",
-      "message": "[A] L L I A N C E  I S  B A C K\n                  :D                  ",
+      "message": "[A] L L I A N C E  I S  N O T  B A C K\n                                    ",
       "desc": "Displays [A]lliance's status!"
     },
     "vp": {
