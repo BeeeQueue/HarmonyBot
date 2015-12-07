@@ -91,7 +91,7 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 
 		par = message.substring(message.indexOf(" ") + 1).split(" ");
 
-		console.log("Got command " + com + " from " + user + "!");
+		//console.log("Got command " + com + " from " + user + "!");
 
 		var data = commands.commands[com];
 
@@ -107,7 +107,7 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 		}
 		else
 		{
-			console.log("Doesn't exist!");
+			//console.log("Doesn't exist!");
 		}
 	}
 	else
@@ -522,7 +522,7 @@ ListCommands = function (data)
 	SendMessage(message, data.channelID);
 };
 
-ListSongs = function (data)
+ListSounds = function (data)
 {
 	var message = "";
 

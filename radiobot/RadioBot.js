@@ -17,8 +17,10 @@ function RadioBot ()
 
 	var commands,
 	    songs,
+	    songList,
 	    lastSong,
 	    currChan,
+	    currSong,
 	    stream,
 	    radioOn = true;
 
@@ -29,12 +31,11 @@ function RadioBot ()
 
 	this.LoadCommands = function ()
 	{
-		fs.readFile('commands.json', function (err, data)
+		fs.readFile('radiobot/commands.json', function (err, data)
 		{
 			if (!err)
 			{
 				commands = JSON.parse(data);
-				keywords = Object.keys(commands.keywords);
 				console.log("RadioBot: Loaded commands.json");
 			}
 			else
@@ -51,8 +52,9 @@ function RadioBot ()
 			bot.testAudio({ channel: channel, stereo: true }, function (streamPar)
 			{
 				console.log(file);
+				currSong = file.substr(0, file.lastIndexOf("."));
 				stream = streamPar;
-				stream.playAudioFile("../sounds/radio/" + file);
+				stream.playAudioFile("./sounds/radio/" + file);
 				stream.channelID = channel;
 
 
@@ -89,11 +91,17 @@ function RadioBot ()
 	{
 		var channelToJoin;
 
-		fs.readdir('../sounds/radio', function (err, files)
+		fs.readdir('./sounds/radio', function (err, files)
 		{
 			if (!err)
 			{
 				songs = files;
+				songList = "";
+
+				for (var i = 0; i < songs.length; i++)
+				{
+					songList += "\n" + songs[i];
+				}
 
 				//region Channel selection
 				if (data !== undefined && data.userID !== undefined)
@@ -122,7 +130,7 @@ function RadioBot ()
 				}
 				else
 				{
-					channelToJoin = ServerInfo.voiceChannels.bot1;
+					channelToJoin = ServerInfo.voiceChannels.radio;
 				}
 				//endregion
 
@@ -135,6 +143,37 @@ function RadioBot ()
 		});
 	}
 
+	//region
+	ListSongs = function (data)
+	{
+		var message;
+
+		for (var i = 0; i < songs.length; i++)
+		{
+			message += "\n" + songs[i];
+		}
+
+		SendMessage(message, data.userID);
+	};
+
+	CurrentlyPlaying = function (data)
+	{
+		SendMessage("Currently playing " + currSong, data.channelID, false);
+	};
+
+	Skip = function (data)
+	{
+		stream.stopAudioFile(function ()
+		{
+			setTimeout(function ()
+			{
+				PlaySong(songs[GetRandomInt(0, songs.length - 1)], currChan);
+			}, 100);
+		});
+	};
+	//endregion
+
+	//region Misc. Functions
 	function GetVoiceChannels ()
 	{
 		var allChannels   = bot.servers[ServerInfo.serverID].channels,
@@ -155,6 +194,23 @@ function RadioBot ()
 	{
 		return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
+
+	function SendMessage (message, id, doFormat)
+	{
+		if (message.indexOf("http") === -1 && (doFormat == undefined || doFormat == true))
+		{
+			message = '```' + message + '```';
+		}
+
+		bot.sendMessage({
+			to:      id,
+			message: message
+		});
+	}
+
+	//endregion
+
+	this.LoadCommands();
 
 	bot.on('ready', function ()
 	{
@@ -186,9 +242,9 @@ function RadioBot ()
 
 			par = message.substring(message.indexOf(" ") + 1).split(" ");
 
-			console.log("Got command " + com + " from " + user + "!");
+			//console.log("Got command " + com + " from " + user + "!");
 
-			var data = commands.commands[com];
+			var data = commands[com];
 
 			if (data != null)
 			{
@@ -202,11 +258,11 @@ function RadioBot ()
 			}
 			else
 			{
-				console.log("Doesn't exist!");
+				//console.log("Doesn't exist!");
 			}
 		}
 	});
 }
 
 module.exports = RadioBot;
-RadioBot();
+//RadioBot();

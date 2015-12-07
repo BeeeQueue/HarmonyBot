@@ -8,8 +8,8 @@
       "type": "ListCommands",
       "donotlist": true
     },
-    "songs": {
-      "type": "ListSongs",
+    "sounds": {
+      "type": "ListSounds",
       "desc":"Lists all available files!"
     },
     "ludd": {
@@ -57,7 +57,8 @@
         "\"Just like- \nUuh- \nWhat your- \nMy daad- \nI did to your mom last night!\nOOOOOOOOO\" \n-Adam Haglund 2014",
         "\"Why do you follow HentaiDude??\"\n\"He... makes good... music...\"\n-Ludvig Löfberg 2015",
         "\"ICH LIEBE STRASSE\"\n-Simon Ejdre 2015",
-        "GESCHLECHTSKRANKHEIT"
+        "GESCHLECHTSKRANKHEIT",
+		"\"ADMAD\nIS EZYINER\nEXIZRE\nEZIER\"\n-Ludvig Karlsson 2015"
       ],
       "desc": "Displays a random quote!"
     },
