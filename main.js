@@ -21,20 +21,21 @@ var username = "HarmonyBot",
 
 // Misc. vars
 // Requires
-var express    = require('express'),
-    app        = express(),
-    http       = require('http').Server(app),
-    fs         = require('fs'),
-    _          = require('underscore'),
-    DiscordIO  = require('discord.io'),
-    ServerInfo = require('./serverInfo'),
-    remindMe   = require('./remindMe'),
-    bot        = new DiscordIO({
+const express    = require('express'),
+      app        = express(),
+      http       = require('http').Server(app),
+      fs         = require('fs'),
+      _          = require('underscore'),
+      DiscordIO  = require('discord.io'),
+      ServerInfo = require('./serverInfo'),
+      remindMe   = require('./remindMe'),
+      RadioBot   = require("./radiobot/RadioBot");
+
+var bot      = new DiscordIO({
 	    email:    email,
 	    password: password,
 	    autorun:  true
     }),
-    RadioBot = require("./radiobot/RadioBot"),
     radioBot = new RadioBot();
 
 var stream,
@@ -574,7 +575,7 @@ DeleteThis = function (data)
 {
 	bot.deleteMessage({
 		messageID: data.messageID,
-		channel: data.channelID
+		channel:   data.channelID
 	});
 };
 
