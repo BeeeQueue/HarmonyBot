@@ -100,6 +100,7 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 			data.user = user;
 			data.userID = userID;
 			data.channelID = channelID;
+			data.messageID = rawEvent.d.id;
 			data.commandName = com;
 			data.pars = par;
 
@@ -567,6 +568,14 @@ ReloadCommands = function (data)
 		LoadCommands();
 		SendMessage("Reloading commands!", data.channelID);
 	}
+};
+
+DeleteThis = function (data)
+{
+	bot.deleteMessage({
+		messageID: data.messageID,
+		channel: data.channelID
+	});
 };
 
 //endregion

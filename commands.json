@@ -10,7 +10,7 @@
     },
     "sounds": {
       "type": "ListSounds",
-      "desc":"Lists all available files!"
+      "desc": "Lists all available files!"
     },
     "ludd": {
       "type": "Ludd",
@@ -58,7 +58,7 @@
         "\"Why do you follow HentaiDude??\"\n\"He... makes good... music...\"\n-Ludvig Löfberg 2015",
         "\"ICH LIEBE STRASSE\"\n-Simon Ejdre 2015",
         "GESCHLECHTSKRANKHEIT",
-		"\"ADMAD\nIS EZYINER\nEXIZRE\nEZIER\"\n-Ludvig Karlsson 2015"
+        "\"ADMAD\nIS EZYINER\nEXIZRE\nEZIER\"\n-Ludvig Karlsson 2015"
       ],
       "desc": "Displays a random quote!"
     },
@@ -138,6 +138,10 @@
     },
     "getuserids": {
       "type": "GetUserIDs",
+      "donotlist": true
+    },
+    "delete": {
+      "type": "DeleteThis",
       "donotlist": true
     }
   },
