@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "body-parser": "~1.13.2",
-    "discord.io": "^1.4.11",
+    "discord.io": "^1.4.13",
     "express": "~4.13.1",
     "fs": "~0.0.2",
     "underscore": "^1.0.0"

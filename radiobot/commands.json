@@ -1,0 +1,11 @@
+{
+  "songs": {
+    "type": "ListSongs"
+  },
+  "playing": {
+    "type": "CurrentlyPlaying"
+  },
+  "skip": {
+    "type":"Skip"
+  }
+}
