@@ -34,8 +34,8 @@ var express    = require('express'),
 	    password: password,
 	    autorun:  true
     }),
-    RadioBot   = require("./radiobot/RadioBot"),
-    radioBot   = new RadioBot();
+    RadioBot = require("./radiobot/RadioBot"),
+    radioBot = new RadioBot();
 
 var stream,
     lastMessageID,
@@ -44,544 +44,538 @@ var stream,
 
 var commands = {}, keywords = [];
 
-try
+LoadCommands();
+
+app.use('', express.static(__dirname + '/public'));
+
+
+app.get('/', function (req, res)
 {
-	LoadCommands();
+	/*bot.username = username;
+	 bot.email =  email;
+	 bot.password = password;*/
+	bot.connect();
+	bot.setPresence();
+});
 
-	app.use('', express.static(__dirname + '/public'));
-
-
-	app.get('/', function (req, res)
-	{
-		/*bot.username = username;
-		 bot.email =  email;
-		 bot.password = password;*/
-		bot.connect();
-		bot.setPresence();
+bot.on('ready', function ()
+{
+	console.log("Connected!");
+	console.log("Logged in as: ");
+	console.log(bot.username + " [" + bot.id + "]");
+	bot.setPresence({
+		idle_since: null
 	});
 
-	bot.on('ready', function ()
+	console.log(ServerInfo.voiceChannels.afk);
+});
+
+
+bot.on('message', function (user, userID, channelID, message, rawEvent)
+{
+	var lowerCaseMessage = message.toLowerCase();
+
+	//region Command
+	if (message[0] === "!")
 	{
-		console.log("Connected!");
-		console.log("Logged in as: ");
-		console.log(bot.username + " [" + bot.id + "]");
-		bot.setPresence({
-			idle_since: null
-		});
+		var com, par = [];
 
-		console.log(ServerInfo.voiceChannels.afk);
-	});
-
-
-	bot.on('message', function (user, userID, channelID, message, rawEvent)
-	{
-		var lowerCaseMessage = message.toLowerCase();
-
-		//region Command
-		if (message[0] === "!")
+		if (message.indexOf(" ") > -1)
 		{
-			var com, par = [];
+			com = message.substring(1, message.indexOf(" "));
+		}
+		else
+		{
+			com = message.substring(1);
+		}
 
-			if (message.indexOf(" ") > -1)
+		par = message.substring(message.indexOf(" ") + 1).split(" ");
+
+		//console.log("Got command " + com + " from " + user + "!");
+
+		var data = commands.commands[com];
+
+		if (data != null)
+		{
+			data.user = user;
+			data.userID = userID;
+			data.channelID = channelID;
+			data.messageID = rawEvent.d.id;
+			data.commandName = com;
+			data.pars = par;
+
+			global[data.type](data);
+		}
+		else
+		{
+			//console.log("Doesn't exist!");
+		}
+	}
+	else
+	//endregion
+	{
+		//region Keywords
+		for (var i = 0; i < keywords.length; i++)
+		{
+			if (lowerCaseMessage.indexOf(keywords[i]) > -1)
 			{
-				com = message.substring(1, message.indexOf(" "));
-			}
-			else
-			{
-				com = message.substring(1);
-			}
-
-			par = message.substring(message.indexOf(" ") + 1).split(" ");
-
-			//console.log("Got command " + com + " from " + user + "!");
-
-			var data = commands.commands[com];
-
-			if (data != null)
-			{
+				var word = lowerCaseMessage.substr(lowerCaseMessage.indexOf(keywords[i]), keywords[i].length);
+				data = commands.keywords[word];
 				data.user = user;
 				data.userID = userID;
 				data.channelID = channelID;
-				data.messageID = rawEvent.d.id;
 				data.commandName = com;
-				data.pars = par;
 
 				global[data.type](data);
-			}
-			else
-			{
-				//console.log("Doesn't exist!");
+
+				break;
 			}
 		}
-		else
 		//endregion
-		{
-			//region Keywords
-			for (var i = 0; i < keywords.length; i++)
-			{
-				if (lowerCaseMessage.indexOf(keywords[i]) > -1)
-				{
-					var word = lowerCaseMessage.substr(lowerCaseMessage.indexOf(keywords[i]), keywords[i].length);
-					data = commands.keywords[word];
-					data.user = user;
-					data.userID = userID;
-					data.channelID = channelID;
-					data.commandName = com;
-
-					global[data.type](data);
-
-					break;
-				}
-			}
-			//endregion
 
 
-		}
+	}
 
 
-		lastMessageID = rawEvent.d.id;
-	});
+	lastMessageID = rawEvent.d.id;
+});
 
 
 //region Debugging
-	bot.on('err', function (err)
-	{
-		console.log(err.data);
-		console.log(err);
-	});
+bot.on('err', function (err)
+{
+	console.log(err.data);
+	console.log(err);
+});
 
-	bot.on('disconnected', function ()
-	{
-		console.log("Bot disconnected!");
-	});
+bot.on('disconnected', function ()
+{
+	console.log("Bot disconnected!");
+});
 //endregion
 
 
-	function SendMessage (message, id, doFormat)
+function SendMessage (message, id, doFormat)
+{
+	if (message.indexOf("http") === -1 && (doFormat == undefined || doFormat == true))
 	{
-		if (message.indexOf("http") === -1 && (doFormat == undefined || doFormat == true))
-		{
-			message = '```' + message + '```';
-		}
-
-		bot.sendMessage({
-			to:      id,
-			message: message
-		});
+		message = '```' + message + '```';
 	}
 
-	function PlaySound (file, channel, callback, finished)
-	{
-		var StartPlaying = function ()
-		{
-			bot.testAudio({ channel: channel, stereo: true }, function (streamPar)
-			{
-				stream = streamPar;
-				stream.playAudioFile(file);
-				playing = true;
-				stream.channelID = channel;
-
-				stream.on('fileEnd', function ()
-				{
-					playing = false;
-
-					setTimeout(function ()
-					{
-						bot.leaveVoiceChannel(channel);
-					}, 200);
-
-					if (finished && typeof(finished) === 'function')
-					{
-						finished();
-					}
-				});
-			});
-		};
-
-		if (!playing)
-		{
-			console.log("Joining " + channel + " to play " + file);
-
-			bot.joinVoiceChannel(channel, function ()
-			{
-				StartPlaying();
-			});
-		}
-	}
-
-
-	function LoadCommands ()
-	{
-		fs.readFile('commands.json', function (err, data)
-		{
-			if (!err)
-			{
-				commands = JSON.parse(data);
-				keywords = Object.keys(commands.keywords);
-				console.log("Successfully loaded commands.json");
-			}
-			else
-			{
-				console.log(err);
-			}
-		});
-	}
-
-	function GetRandomInt (min, max)
-	{
-		return Math.floor(Math.random() * (max - min + 1)) + min;
-	}
-
-	function GetVoiceChannels ()
-	{
-		var allChannels   = bot.servers[ServerInfo.serverID].channels,
-		    voiceChannels = {};
-
-		for (var i = 0; i < Object.keys(allChannels).length; i++)
-		{
-			if (allChannels[Object.keys(allChannels)[i]].type === "voice")
-			{
-				voiceChannels[Object.keys(allChannels)[i]] = allChannels[Object.keys(allChannels)[i]];
-			}
-		}
-
-		return voiceChannels;
-	}
-
-	function DateToYYYYMMDD ()
-	{
-		var date = new Date(),
-		    yyyy = date.getFullYear().toString(),
-		    mm   = (date.getMonth() + 1).toString(), // getMonth() is zero-based
-		    dd   = date.getDate().toString();
-
-		return yyyy + (mm[1] ? mm : "0" + mm[0]) + (dd[1] ? dd : "0" + dd[0]); // padding
-	}
-
-
-	http.listen(3000, function ()
-	{
-		console.log('listening on *:3000');
+	bot.sendMessage({
+		to:      id,
+		message: message
 	});
+}
+
+function PlaySound (file, channel, callback, finished)
+{
+	var StartPlaying = function ()
+	{
+		bot.testAudio({ channel: channel, stereo: true }, function (streamPar)
+		{
+			stream = streamPar;
+			stream.playAudioFile(file);
+			playing = true;
+			stream.channelID = channel;
+
+			stream.on('fileEnd', function ()
+			{
+				playing = false;
+
+				setTimeout(function ()
+				{
+					bot.leaveVoiceChannel(channel);
+				}, 200);
+
+				if (finished && typeof(finished) === 'function')
+				{
+					finished();
+				}
+			});
+		});
+	};
+
+	if (!playing)
+	{
+		console.log("Joining " + channel + " to play " + file);
+
+		bot.joinVoiceChannel(channel, function ()
+		{
+			StartPlaying();
+		});
+	}
+}
+
+
+function LoadCommands ()
+{
+	fs.readFile('commands.json', function (err, data)
+	{
+		if (!err)
+		{
+			commands = JSON.parse(data);
+			keywords = Object.keys(commands.keywords);
+			console.log("Successfully loaded commands.json");
+		}
+		else
+		{
+			console.log(err);
+		}
+	});
+}
+
+function GetRandomInt (min, max)
+{
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function GetVoiceChannels ()
+{
+	var allChannels   = bot.servers[ServerInfo.serverID].channels,
+	    voiceChannels = {};
+
+	for (var i = 0; i < Object.keys(allChannels).length; i++)
+	{
+		if (allChannels[Object.keys(allChannels)[i]].type === "voice")
+		{
+			voiceChannels[Object.keys(allChannels)[i]] = allChannels[Object.keys(allChannels)[i]];
+		}
+	}
+
+	return voiceChannels;
+}
+
+function DateToYYYYMMDD ()
+{
+	var date = new Date(),
+	    yyyy = date.getFullYear().toString(),
+	    mm   = (date.getMonth() + 1).toString(), // getMonth() is zero-based
+	    dd   = date.getDate().toString();
+
+	return yyyy + (mm[1] ? mm : "0" + mm[0]) + (dd[1] ? dd : "0" + dd[0]); // padding
+}
+
+
+http.listen(3000, function ()
+{
+	console.log('listening on *:3000');
+});
 
 
 //region Command functions
 
-	/*   data variable:
-	 *   user(name), userID, channelID, commandName
-	 *   command variables can be found in commands.json
-	 */
+/*   data variable:
+ *   user(name), userID, channelID, commandName
+ *   command variables can be found in commands.json
+ */
 
-	Coinflip = function (data)
+Coinflip = function (data)
+{
+	if (data.choices.length < 3)
 	{
-		if (data.choices.length < 3)
+		var result;
+
+		if (Math.random() > 0.5)
 		{
-			var result;
-
-			if (Math.random() > 0.5)
-			{
-				result = data.choices[0];
-			}
-			else
-			{
-				result = data.choices[1];
-			}
-
-			var message = data.message;
-			message = message.replace("{result}", result);
-
-			SendMessage(message, data.channelID);
+			result = data.choices[0];
 		}
 		else
 		{
-			console.log("Too many choices for Coinflip in " + data.commandName);
-		}
-	};
-
-	Ludd = function (data)
-	{
-		var tempRandom       = Math.random(), luddID,
-		    endStringGeneral = ["!", "?", ", how disappointing.", ", a shame really.",
-			    ", wow really??", "...", ", unbelievable as it may be!", ", 10/10!",
-			    ". The other one is gonna have a bad time.", "'s cat. RIP", ", fucking weeb.", "-kun", "-senpai", "-san"],
-		    endStringFludd   = ["! Snakes beware!", ", Meepo approved!", ", the sixth Meepo!", ", HWO DDI THSI HAPENNE!?!?!",
-			    "! ONNNEEEEEE PUUUUNNNNNNNCHCHHCHH!!"],
-		    endStringLudd    = [", the lazy bastard.", ", even if he doesn't work during lessons?", ", the procrastinating master of 1998",
-			    ". Adma.", ", or was it Lövberg?"],
-		    endString,
-		    name;
-
-		if (tempRandom > 0.5) // Fludd (115456516059824128)
-		{
-			luddID = '115456516059824128';
-
-			endString = endStringGeneral;
-			name = 'Karlsson';
-
-			if (Math.random() > 0.85)
-			{
-				endString = endStringFludd;
-			}
-		}
-		else // Ludd (107530243975176192)
-		{
-			luddID = '107530243975176192';
-			name = 'Löfberg';
-
-			endString = endStringGeneral;
-
-			if (Math.random() > 0.85)
-			{
-				endString = endStringLudd;
-			}
+			result = data.choices[1];
 		}
 
-		var random = 0;
-		do
-		{
-			random = GetRandomInt(0, endString.length - 1);
-		} while (random == lastRandom);
-
-		// Which line?
-		endString = endString[random];
-
-		//name = bot.servers[cGeneral].members[luddID].user.username;
-
-		var messageToSend = "\nAnd the best Ludd is...\n" + name + endString;
-
-		SendMessage(messageToSend, data.channelID)
-	};
-
-	Random = function (data)
-	{
-		var random = 0;
-		do
-		{
-			random = GetRandomInt(0, data.choices.length - 1);
-		} while (random == lastRandom);
-
-		SendMessage(data.choices[random], data.channelID);
-	};
-
-	Response = function (data)
-	{
-		data.message = data.message.replace("{user}", data.user);
-		SendMessage(data.message, data.channelID, data.doFormat);
-	};
-
-	ImageResponse = function (data)
-	{
-		bot.uploadFile({
-			'file':    'img/' + data.image,
-			'channel': data.channelID
-		});
-	};
-
-	Love = function (data)
-	{
-		switch (data.userID)
-		{
-			case '114686865172332544':
-				SendMessage("Fuck you, Semen.", data.channelID);
-				break;
-			case '114667432852979712':
-				SendMessage("Hello, master!", data.channelID);
-				break;
-			case '107530243975176192':
-			case '115456516059824128':
-				SendMessage("I love you too. But be careful of the other one, he's been making moves on me...", data.channelID);
-				break;
-			case '114791446246064137':
-				SendMessage("Woah, so aggressive!", data.channelID);
-				break;
-			default:
-				SendMessage("*awkward silence*", data.channelID);
-		}
-	};
-
-	GetUserIDs = function (data)
-	{
-		var userIDs = Object.keys(bot.servers[ServerInfo.serverID].members);
-		var message = "";
-
-		for (var i = 0; i < userIDs.length; i++)
-		{
-			message += userIDs[i] + " | " + bot.servers[ServerInfo.serverID].members[userIDs[i]].user.username + "\n";
-		}
-
-		SendMessage(message, data.userID);
-	};
-
-	PlayAudio = function (data)
-	{
-		var userID        = data.userID,
-		    username      = data.user,
-		    voiceChannels = GetVoiceChannels(),
-		    file,
-		    channelToJoin;
-
-		// Get whole file name
-		if (data.file === undefined)
-		{
-			file = data.pars[0];
-			for (var i = 1; i < data.pars.length; i++)
-			{
-				try
-				{
-					file += " " + data.pars[i];
-				} catch (e)
-				{
-					console.log(e);
-				}
-			}
-		}
-		else if (data.file !== undefined && typeof data.file === 'string')
-		{
-			file = data.file;
-		}
-		else if (data.file[1] !== undefined)
-		{
-			var rand = GetRandomInt(0, data.file.length);
-
-			file = data.file[rand];
-		}
-
-		file = "sounds/" + file + ".mp3";
-
-		// Check if already playing a file, queue/deny?
-		if (playing)
-		{
-			SendMessage("Sorry, I'm already playing a file!", data.channelID);
-			return;
-		}
-
-		// Check if file exists
-		fs.exists(file, function (res)
-		{
-			if (res === false)
-			{
-				SendMessage("That file doesn't exist!\nGet a list of all the sounds with !sounds", data.channelID);
-				//return; TODO: remove comment
-			}
-		});
-
-		// Check which, if any, channel the caller is in.
-		for (var j = 0; j < Object.keys(voiceChannels).length; j++)
-		{
-			var channel = voiceChannels[Object.keys(voiceChannels)[j]];
-
-			for (var k = 0; k < Object.keys(channel.members).length; k++)
-			{
-				var memberID = Object.keys(channel.members)[k];
-
-				if (memberID === userID)
-				{
-					console.log(channel.name);
-					channelToJoin = channel.id;
-					break;
-				}
-			}
-
-			if (channelToJoin !== undefined)
-			{
-				break;
-			}
-		}
-
-		PlaySound(file, channelToJoin);
-	};
-
-	StopAudio = function (data)
-	{
-		try
-		{
-			stream.stopAudioFile();
-			playing = false;
-
-			setTimeout(function ()
-			{
-				bot.leaveVoiceChannel(stream.channelID);
-			}, 200);
-		} catch (e)
-		{
-		}
-	};
-
-	ListCommands = function (data)
-	{
-		LoadCommands();
-
-		var message = "",
-		    keys    = Object.keys(commands.commands).sort();
-
-		for (var i = 0; i < keys.length; i++)
-		{
-			if (commands.commands[keys[i]].donotlist !== true)
-			{
-				message += "!" + keys[i] + ": " + commands.commands[keys[i]].desc + "\n";
-			}
-		}
+		var message = data.message;
+		message = message.replace("{result}", result);
 
 		SendMessage(message, data.channelID);
-	};
-
-	ListSounds = function (data)
+	}
+	else
 	{
-		var message = "";
+		console.log("Too many choices for Coinflip in " + data.commandName);
+	}
+};
 
-		fs.readdir('sounds', function (err, files)
-		{
-			if (!err)
-			{
-				files = files.sort();
-
-				for (var i = 0; i < files.length; i++)
-				{
-					var file = files[i];
-
-					if ((file.lastIndexOf(".mp3") > -1) || (file.lastIndexOf(".wav") > -1))
-					{
-						message += file.substr(0, file.lastIndexOf('.')) + "\n";
-					}
-				}
-
-				SendMessage(message, data.channelID);
-			}
-		});
-	};
-
-	// !remindme x [minute|minutes|hour|hours|day|days|month|months|year|years] message
-// !remindme yyyy-mm-dd message
-	RemindMe = function (data)
-	{
-		var delay;
-		console.log(data);
-
-		if (typeof data.pars[0] == Number)
-		{
-			console.log(data.pars[0]);
-		}
-	};
-
-	ReloadCommands = function (data)
-	{
-		if (data.userID == '114667432852979712')
-		{
-			LoadCommands();
-			SendMessage("Reloading commands!", data.channelID);
-		}
-	};
-
-	DeleteThis = function (data)
-	{
-		bot.deleteMessage({
-			messageID: data.messageID,
-			channel:   data.channelID
-		});
-	};
-} catch (err)
+Ludd = function (data)
 {
-	fs.writeFile('output/error.json', JSON.stringify(err));
-}
+	var tempRandom       = Math.random(), luddID,
+	    endStringGeneral = ["!", "?", ", how disappointing.", ", a shame really.",
+		    ", wow really??", "...", ", unbelievable as it may be!", ", 10/10!",
+		    ". The other one is gonna have a bad time.", "'s cat. RIP", ", fucking weeb.", "-kun", "-senpai", "-san"],
+	    endStringFludd   = ["! Snakes beware!", ", Meepo approved!", ", the sixth Meepo!", ", HWO DDI THSI HAPENNE!?!?!",
+		    "! ONNNEEEEEE PUUUUNNNNNNNCHCHHCHH!!"],
+	    endStringLudd    = [", the lazy bastard.", ", even if he doesn't work during lessons?", ", the procrastinating master of 1998",
+		    ". Adma.", ", or was it Lövberg?"],
+	    endString,
+	    name;
+
+	if (tempRandom > 0.5) // Fludd (115456516059824128)
+	{
+		luddID = '115456516059824128';
+
+		endString = endStringGeneral;
+		name = 'Karlsson';
+
+		if (Math.random() > 0.85)
+		{
+			endString = endStringFludd;
+		}
+	}
+	else // Ludd (107530243975176192)
+	{
+		luddID = '107530243975176192';
+		name = 'Löfberg';
+
+		endString = endStringGeneral;
+
+		if (Math.random() > 0.85)
+		{
+			endString = endStringLudd;
+		}
+	}
+
+	var random = 0;
+	do
+	{
+		random = GetRandomInt(0, endString.length - 1);
+	} while (random == lastRandom);
+
+	// Which line?
+	endString = endString[random];
+
+	//name = bot.servers[cGeneral].members[luddID].user.username;
+
+	var messageToSend = "\nAnd the best Ludd is...\n" + name + endString;
+
+	SendMessage(messageToSend, data.channelID)
+};
+
+Random = function (data)
+{
+	var random = 0;
+	do
+	{
+		random = GetRandomInt(0, data.choices.length - 1);
+	} while (random == lastRandom);
+
+	SendMessage(data.choices[random], data.channelID);
+};
+
+Response = function (data)
+{
+	data.message = data.message.replace("{user}", data.user);
+	SendMessage(data.message, data.channelID, data.doFormat);
+};
+
+ImageResponse = function (data)
+{
+	bot.uploadFile({
+		'file':    'img/' + data.image,
+		'channel': data.channelID
+	});
+};
+
+Love = function (data)
+{
+	switch (data.userID)
+	{
+		case '114686865172332544':
+			SendMessage("Fuck you, Semen.", data.channelID);
+			break;
+		case '114667432852979712':
+			SendMessage("Hello, master!", data.channelID);
+			break;
+		case '107530243975176192':
+		case '115456516059824128':
+			SendMessage("I love you too. But be careful of the other one, he's been making moves on me...", data.channelID);
+			break;
+		case '114791446246064137':
+			SendMessage("Woah, so aggressive!", data.channelID);
+			break;
+		default:
+			SendMessage("*awkward silence*", data.channelID);
+	}
+};
+
+GetUserIDs = function (data)
+{
+	var userIDs = Object.keys(bot.servers[ServerInfo.serverID].members);
+	var message = "";
+
+	for (var i = 0; i < userIDs.length; i++)
+	{
+		message += userIDs[i] + " | " + bot.servers[ServerInfo.serverID].members[userIDs[i]].user.username + "\n";
+	}
+
+	SendMessage(message, data.userID);
+};
+
+PlayAudio = function (data)
+{
+	var userID        = data.userID,
+	    username      = data.user,
+	    voiceChannels = GetVoiceChannels(),
+	    file,
+	    channelToJoin;
+
+	// Get whole file name
+	if (data.file === undefined)
+	{
+		file = data.pars[0];
+		for (var i = 1; i < data.pars.length; i++)
+		{
+			try
+			{
+				file += " " + data.pars[i];
+			} catch (e)
+			{
+				console.log(e);
+			}
+		}
+	}
+	else if (data.file !== undefined && typeof data.file === 'string')
+	{
+		file = data.file;
+	}
+	else if (data.file[1] !== undefined)
+	{
+		var rand = GetRandomInt(0, data.file.length);
+
+		file = data.file[rand];
+	}
+
+	file = "sounds/" + file + ".mp3";
+
+	// Check if already playing a file, queue/deny?
+	if (playing)
+	{
+		SendMessage("Sorry, I'm already playing a file!", data.channelID);
+		return;
+	}
+
+	// Check if file exists
+	fs.exists(file, function (res)
+	{
+		if (res === false)
+		{
+			SendMessage("That file doesn't exist!\nGet a list of all the sounds with !sounds", data.channelID);
+			//return; TODO: remove comment
+		}
+	});
+
+	// Check which, if any, channel the caller is in.
+	for (var j = 0; j < Object.keys(voiceChannels).length; j++)
+	{
+		var channel = voiceChannels[Object.keys(voiceChannels)[j]];
+
+		for (var k = 0; k < Object.keys(channel.members).length; k++)
+		{
+			var memberID = Object.keys(channel.members)[k];
+
+			if (memberID === userID)
+			{
+				console.log(channel.name);
+				channelToJoin = channel.id;
+				break;
+			}
+		}
+
+		if (channelToJoin !== undefined)
+		{
+			break;
+		}
+	}
+
+	PlaySound(file, channelToJoin);
+};
+
+StopAudio = function (data)
+{
+	try
+	{
+		stream.stopAudioFile();
+		playing = false;
+
+		setTimeout(function ()
+		{
+			bot.leaveVoiceChannel(stream.channelID);
+		}, 200);
+	} catch (e)
+	{
+	}
+};
+
+ListCommands = function (data)
+{
+	LoadCommands();
+
+	var message = "",
+	    keys    = Object.keys(commands.commands).sort();
+
+	for (var i = 0; i < keys.length; i++)
+	{
+		if (commands.commands[keys[i]].donotlist !== true)
+		{
+			message += "!" + keys[i] + ": " + commands.commands[keys[i]].desc + "\n";
+		}
+	}
+
+	SendMessage(message, data.channelID);
+};
+
+ListSounds = function (data)
+{
+	var message = "";
+
+	fs.readdir('sounds', function (err, files)
+	{
+		if (!err)
+		{
+			files = files.sort();
+
+			for (var i = 0; i < files.length; i++)
+			{
+				var file = files[i];
+
+				if ((file.lastIndexOf(".mp3") > -1) || (file.lastIndexOf(".wav") > -1))
+				{
+					message += file.substr(0, file.lastIndexOf('.')) + "\n";
+				}
+			}
+
+			SendMessage(message, data.channelID);
+		}
+	});
+};
+
+// !remindme x [minute|minutes|hour|hours|day|days|month|months|year|years] message
+// !remindme yyyy-mm-dd message
+RemindMe = function (data)
+{
+	var delay;
+	console.log(data);
+
+	if (typeof data.pars[0] == Number)
+	{
+		console.log(data.pars[0]);
+	}
+};
+
+ReloadCommands = function (data)
+{
+	if (data.userID == '114667432852979712')
+	{
+		LoadCommands();
+		SendMessage("Reloading commands!", data.channelID);
+	}
+};
+
+DeleteThis = function (data)
+{
+	bot.deleteMessage({
+		messageID: data.messageID,
+		channel: data.channelID
+	});
+};
 
 //endregion
