@@ -31,12 +31,12 @@ const express    = require('express'),
       remindMe   = require('./remindMe'),
       RadioBot   = require("./radiobot/RadioBot");
 
-var bot      = new DiscordIO({
+var bot = new DiscordIO({
 	    email:    email,
 	    password: password,
 	    autorun:  true
     }),
-    radioBot = new RadioBot();
+    radioBot;
 
 var stream,
     lastMessageID,
@@ -125,6 +125,7 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 				data.user = user;
 				data.userID = userID;
 				data.channelID = channelID;
+				data.messageID = rawEvent.d.id;
 				data.commandName = com;
 
 				global[data.type](data);
@@ -577,6 +578,14 @@ DeleteThis = function (data)
 		messageID: data.messageID,
 		channel:   data.channelID
 	});
+
+	if (data.message != null && data.message != "")
+		SendMessage(data.message, data.channelID);
+};
+
+StartRadio = function (data)
+{
+	radioBot = new RadioBot();
 };
 
 //endregion

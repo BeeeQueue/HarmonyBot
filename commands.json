@@ -143,6 +143,9 @@
     "delete": {
       "type": "DeleteThis",
       "donotlist": true
+    },
+    "radio": {
+      "type": "StartRadio"
     }
   },
   "keywords": {
@@ -166,6 +169,10 @@
       "type": "ImageResponse",
       "image": "lennyface.png",
       "message": "https://twibbon.blob.core.windows.net/twibbon/2015/197/503dadea-416a-4283-a331-4f6ae5b42e5f.png"
+    },
+    "booby": {
+      "type": "DeleteThis",
+      "message": "F O R E B O D E N"
     }
   }
 }
