@@ -58,7 +58,8 @@
         "\"Why do you follow HentaiDude??\"\n\"He... makes good... music...\"\n-Ludvig Löfberg 2015",
         "\"ICH LIEBE STRASSE\"\n-Simon Ejdre 2015",
         "GESCHLECHTSKRANKHEIT",
-        "\"ADMAD\nIS EZYINER\nEXIZRE\nEZIER\"\n-Ludvig Karlsson 2015"
+        "\"ADMAD\nIS EZYINER\nEXIZRE\nEZIER\"\n-Ludvig Karlsson 2015",
+		"\"i hate it when autocorrect changes cucumber to big fat throbbing cock\"\n-Adam Haglund 2015"
       ],
       "desc": "Displays a random quote!"
     },
@@ -73,6 +74,10 @@
       "message": "I am not rigged. I am HarmonyBot.",
       "desc": "Tells the truth"
     },
+	"simon": {
+	  "type":"Response",	
+	  "message":"FUC YOU SIMN"
+	},
     "loadcommands": {
       "type": "ReloadCommands",
       "donotlist": true
