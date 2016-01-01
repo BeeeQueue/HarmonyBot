@@ -57,9 +57,10 @@
         "\"Just like- \nUuh- \nWhat your- \nMy daad- \nI did to your mom last night!\nOOOOOOOOO\" \n-Adam Haglund 2014",
         "\"Why do you follow HentaiDude??\"\n\"He... makes good... music...\"\n-Ludvig Löfberg 2015",
         "\"ICH LIEBE STRASSE\"\n-Simon Ejdre 2015",
-        "GESCHLECHTSKRANKHEIT",
+        "        G E S C H L E C H T S K R A N K H E I T",
         "\"ADMAD\nIS EZYINER\nEXIZRE\nEZIER\"\n-Ludvig Karlsson 2015",
-        "\"i hate it when autocorrect changes cucumber to big fat throbbing cock\"\n-Adam Haglund 2015"
+        "\"i hate it when autocorrect changes cucumber to big fat throbbing cock\"\n-Adam Haglund 2015",
+		"\"AGHME IS FSDUKVJCIN KBSOEKJNM\"\n-Meow<3 2016"
       ],
       "desc": "Displays a random quote!"
     },
@@ -149,9 +150,6 @@
     "delete": {
       "type": "DeleteThis",
       "donotlist": true
-    },
-    "radio": {
-      "type": "StartRadio"
     }
   },
   "keywords": {
