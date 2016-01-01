@@ -1,5 +1,7 @@
 # Project Specific
 sounds/*
+output/*
+tenc
 
 # Logs
 logs

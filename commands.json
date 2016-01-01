@@ -59,7 +59,7 @@
         "\"ICH LIEBE STRASSE\"\n-Simon Ejdre 2015",
         "GESCHLECHTSKRANKHEIT",
         "\"ADMAD\nIS EZYINER\nEXIZRE\nEZIER\"\n-Ludvig Karlsson 2015",
-		"\"i hate it when autocorrect changes cucumber to big fat throbbing cock\"\n-Adam Haglund 2015"
+        "\"i hate it when autocorrect changes cucumber to big fat throbbing cock\"\n-Adam Haglund 2015"
       ],
       "desc": "Displays a random quote!"
     },
@@ -74,10 +74,11 @@
       "message": "I am not rigged. I am HarmonyBot.",
       "desc": "Tells the truth"
     },
-	"simon": {
-	  "type":"Response",	
-	  "message":"FUC YOU SIMN"
-	},
+    "simon": {
+      "type": "Response",
+      "message": "FUC YOU SIMN",
+      "donotlist": "true"
+    },
     "loadcommands": {
       "type": "ReloadCommands",
       "donotlist": true
@@ -89,7 +90,7 @@
     },
     "A": {
       "type": "Response",
-      "message": "[A] L L I A N C E  I S  N O T  B A C K\n                                    ",
+      "message": "[A] L L I A N C E  I S  M A Y B E  B A C K\n",
       "desc": "Displays [A]lliance's status!"
     },
     "vp": {
@@ -168,7 +169,7 @@
     },
     "(╯°□°）╯︵ ┻━┻": {
       "type": "Response",
-      "message": "┬─┬ノ(ಠ_ಠノ) please respect tables"
+      "message": "┬──┬ノ(ಠ益ಠノ) please respect tables"
     },
     "lennyface": {
       "type": "ImageResponse",

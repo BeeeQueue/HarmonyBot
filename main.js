@@ -15,20 +15,19 @@
 
 
 // Bot info
-var username = "HarmonyBot",
-    email    = "daddatv@live.se",
+var email    = "daddatv@live.se",
     password = "discordbot";
 
 // Misc. vars
 // Requires
-const express    = require('express'),
+const express    = require("express"),
       app        = express(),
-      http       = require('http').Server(app),
-      fs         = require('fs'),
-      _          = require('underscore'),
-      DiscordIO  = require('discord.io'),
-      ServerInfo = require('./serverInfo'),
-      remindMe   = require('./remindMe'),
+      http       = require("http").Server(app),
+      fs         = require("fs"),
+      winston    = require("winston"),
+      DiscordIO  = require("discord.io"),
+      ServerInfo = require("./serverInfo"),
+      remindMe   = require("./remindMe"),
       RadioBot   = require("./radiobot/RadioBot");
 
 var bot = new DiscordIO({
@@ -37,6 +36,35 @@ var bot = new DiscordIO({
 	    autorun:  true
     }),
     radioBot;
+
+var logger = new (winston.Logger)({
+	transports: [
+		new (winston.transports.File)({
+			name:         "info-file",
+			filename:     "output/session.log",
+			level:        "info",
+			stdErrLevels: ["infoSessionFile"]
+		}),
+		new (winston.transports.File)({
+			name:      "error-file",
+			filename:  "output/error.log",
+			level:     "errorFile",
+			showLevel: false
+		}),
+		new (winston.transports.Console)({
+			name:         "error-redirect",
+			level:        "error",
+			stdErrLevels: ["errorFile", "errorConsole"]
+		}),
+		new (winston.transports.Console)({
+			name:                            "error-console",
+			level:                           "errorConsole",
+			humanReadableUnhandledException: true
+		})
+	]
+});
+
+fs.writeFile("output/session.log", "");
 
 var stream,
     lastMessageID,
@@ -47,35 +75,32 @@ var commands = {}, keywords = [];
 
 LoadCommands();
 
-app.use('', express.static(__dirname + '/public'));
+app.use("", express.static(__dirname + "/public"));
 
 
-app.get('/', function (req, res)
+app.get("/", function (req, res)
 {
-
+	res("Hello!");
 });
 
-bot.on('ready', function ()
+bot.on("ready", function ()
 {
-	console.log("Connected!");
-	console.log("Logged in as: ");
-	console.log(bot.username + " [" + bot.id + "]");
+	logger.info("Connected!");
 	bot.setPresence({
-		idle_since: null
+		idle_since: null,
+		game:       "with KiritoBot"
 	});
-
-	console.log(ServerInfo.voiceChannels.afk);
 });
 
 
-bot.on('message', function (user, userID, channelID, message, rawEvent)
+bot.on("message", function (user, userID, channelID, message, rawEvent)
 {
 	var lowerCaseMessage = message.toLowerCase();
 
 	//region Command
 	if (message[0] === "!")
 	{
-		var com, par = [];
+		var com, par;
 
 		if (message.indexOf(" ") > -1)
 		{
@@ -88,7 +113,7 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 
 		par = message.substring(message.indexOf(" ") + 1).split(" ");
 
-		//console.log("Got command " + com + " from " + user + "!");
+		logger.log("debug", "Got command " + com + " from " + user + "!");
 
 		var data = commands.commands[com];
 
@@ -101,11 +126,12 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 			data.commandName = com;
 			data.pars = par;
 
+			logger.info(user + " used command " + com + (par != undefined || par != "" ? " with parameters: " + par.toString() + "" : ""));
 			global[data.type](data);
 		}
 		else
 		{
-			//console.log("Doesn't exist!");
+			logger.info(user + " tried to use command " + com + " which doesn't exist");
 		}
 	}
 	else
@@ -117,21 +143,20 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 			if (lowerCaseMessage.indexOf(keywords[i]) > -1)
 			{
 				var word = lowerCaseMessage.substr(lowerCaseMessage.indexOf(keywords[i]), keywords[i].length);
+				//noinspection JSUnresolvedVariable
 				data = commands.keywords[word];
 				data.user = user;
 				data.userID = userID;
 				data.channelID = channelID;
 				data.messageID = rawEvent.d.id;
-				data.commandName = com;
 
+				logger.info(user + " said keyword " + word);
 				global[data.type](data);
 
 				break;
 			}
 		}
 		//endregion
-
-
 	}
 
 
@@ -140,15 +165,15 @@ bot.on('message', function (user, userID, channelID, message, rawEvent)
 
 
 //region Debugging
-bot.on('err', function (err)
+bot.on("err", function (err)
 {
-	console.log(err.data);
-	console.log(err);
+	logger.error(err.data);
+	logger.error(err);
 });
 
-bot.on('disconnected', function ()
+bot.on("disconnected", function ()
 {
-	console.log("Bot disconnected!");
+	logger.info("Disconnected!");
 });
 //endregion
 
@@ -157,7 +182,7 @@ function SendMessage (message, id, doFormat)
 {
 	if (message.indexOf("http") === -1 && (doFormat == undefined || doFormat == true))
 	{
-		message = '```' + message + '```';
+		message = "```" + message + "```";
 	}
 
 	bot.sendMessage({
@@ -177,7 +202,7 @@ function PlaySound (file, channel, callback, finished)
 			playing = true;
 			stream.channelID = channel;
 
-			stream.once('fileEnd', function ()
+			stream.once("fileEnd", function ()
 			{
 				playing = false;
 
@@ -186,7 +211,7 @@ function PlaySound (file, channel, callback, finished)
 					bot.leaveVoiceChannel(channel);
 				}, 200);
 
-				if (finished && typeof(finished) === 'function')
+				if (finished && typeof(finished) === "function")
 				{
 					finished();
 				}
@@ -196,7 +221,7 @@ function PlaySound (file, channel, callback, finished)
 
 	if (!playing)
 	{
-		console.log("Joining " + channel + " to play " + file);
+		logger.info("Joining " + channel + " to play " + file);
 
 		bot.joinVoiceChannel(channel, function ()
 		{
@@ -208,21 +233,22 @@ function PlaySound (file, channel, callback, finished)
 
 function LoadCommands ()
 {
-	fs.readFile('commands.json', function (err, data)
+	fs.readFile("commands.json", function (err, data)
 	{
 		if (!err)
 		{
 			commands = JSON.parse(data);
 			keywords = Object.keys(commands.keywords);
-			console.log("Successfully loaded commands.json");
+			logger.info("Successfully loaded commands.json");
 		}
 		else
 		{
-			console.log(err);
+			logger.error(JSON.stringify(err));
 		}
 	});
 }
 
+//region Misc. Functions
 function GetRandomInt (min, max)
 {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -244,20 +270,21 @@ function GetVoiceChannels ()
 	return voiceChannels;
 }
 
-function DateToYYYYMMDD ()
+function DateToDDMMYYYY ()
 {
-	var date = new Date(),
-	    yyyy = date.getFullYear().toString(),
-	    mm   = (date.getMonth() + 1).toString(), // getMonth() is zero-based
-	    dd   = date.getDate().toString();
+	var date     = new Date(),
+	    yyyy     = date.getFullYear().toString(),
+	    mm       = (date.getMonth() + 1).toString(), // getMonth() is zero-based
+	    dd       = date.getDate().toString();
 
-	return yyyy + (mm[1] ? mm : "0" + mm[0]) + (dd[1] ? dd : "0" + dd[0]); // padding
+	return (dd[1] ? dd : "0" + dd[0]) + "/" + (mm[1] ? mm : "0" + mm[0]) + " " + yyyy; // string
 }
+//endregion
 
 
 http.listen(3000, function ()
 {
-	console.log('listening on *:3000');
+	logger.info("listening on *:3000");
 });
 
 
@@ -270,7 +297,7 @@ http.listen(3000, function ()
 
 Coinflip = function (data)
 {
-	if (data.choices.length < 3)
+	if (data.choices.length === 2)
 	{
 		var result;
 
@@ -290,29 +317,29 @@ Coinflip = function (data)
 	}
 	else
 	{
-		console.log("Too many choices for Coinflip in " + data.commandName);
+		logger.error("Too many/few choices for Coinflip in " + data.commandName);
 	}
 };
 
 Ludd = function (data)
 {
-	var tempRandom       = Math.random(), luddID,
+	var tempRandom       = Math.random(), /*luddID,*/
 	    endStringGeneral = ["!", "?", ", how disappointing.", ", a shame really.",
-		    ", wow really??", "...", ", unbelievable as it may be!", ", 10/10!",
+		    ", wow really??", "...", ", unbelievable as it may be!", ", 10/10!", " 5/7!",
 		    ". The other one is gonna have a bad time.", "'s cat. RIP", ", fucking weeb.", "-kun", "-senpai", "-san"],
 	    endStringFludd   = ["! Snakes beware!", ", Meepo approved!", ", the sixth Meepo!", ", HWO DDI THSI HAPENNE!?!?!",
 		    "! ONNNEEEEEE PUUUUNNNNNNNCHCHHCHH!!"],
 	    endStringLudd    = [", the lazy bastard.", ", even if he doesn't work during lessons?", ", the procrastinating master of 1998",
-		    ". Adma.", ", or was it Lövberg?"],
+		    ". Adma."/*, ", or was it Lövberg?"*/],
 	    endString,
 	    name;
 
 	if (tempRandom > 0.5) // Fludd (115456516059824128)
 	{
-		luddID = '115456516059824128';
+		//luddID = "115456516059824128";
 
 		endString = endStringGeneral;
-		name = 'Karlsson';
+		name = "Karlsson";
 
 		if (Math.random() > 0.85)
 		{
@@ -321,8 +348,8 @@ Ludd = function (data)
 	}
 	else // Ludd (107530243975176192)
 	{
-		luddID = '107530243975176192';
-		name = 'Löfberg';
+		//luddID = "107530243975176192";
+		name = "Löfberg";
 
 		endString = endStringGeneral;
 
@@ -340,8 +367,6 @@ Ludd = function (data)
 
 	// Which line?
 	endString = endString[random];
-
-	//name = bot.servers[cGeneral].members[luddID].user.username;
 
 	var messageToSend = "\nAnd the best Ludd is...\n" + name + endString;
 
@@ -368,8 +393,8 @@ Response = function (data)
 ImageResponse = function (data)
 {
 	bot.uploadFile({
-		'file':    'img/' + data.image,
-		'channel': data.channelID
+		"file":    "img/" + data.image,
+		"channel": data.channelID
 	});
 };
 
@@ -377,21 +402,21 @@ Love = function (data)
 {
 	switch (data.userID)
 	{
-		case '114686865172332544':
+		case "114686865172332544":
 			SendMessage("Fuck you, Semen.", data.channelID);
 			break;
-		case '114667432852979712':
+		case "114667432852979712":
 			SendMessage("Hello, master!", data.channelID);
 			break;
-		case '107530243975176192':
-		case '115456516059824128':
+		case "107530243975176192":
+		case "115456516059824128":
 			SendMessage("I love you too. But be careful of the other one, he's been making moves on me...", data.channelID);
 			break;
-		case '114791446246064137':
+		case "114791446246064137":
 			SendMessage("Woah, so aggressive!", data.channelID);
 			break;
 		default:
-			SendMessage("*awkward silence*", data.channelID);
+			SendMessage("[awkward silence]", data.channelID);
 	}
 };
 
@@ -411,7 +436,7 @@ GetUserIDs = function (data)
 PlayAudio = function (data)
 {
 	var userID        = data.userID,
-	    username      = data.user,
+	    //username      = data.user,
 	    voiceChannels = GetVoiceChannels(),
 	    file,
 	    channelToJoin;
@@ -427,11 +452,11 @@ PlayAudio = function (data)
 				file += " " + data.pars[i];
 			} catch (e)
 			{
-				console.log(e);
+				logger.error(e);
 			}
 		}
 	}
-	else if (data.file !== undefined && typeof data.file === 'string')
+	else if (data.file !== undefined && typeof data.file === "string")
 	{
 		file = data.file;
 	}
@@ -472,7 +497,6 @@ PlayAudio = function (data)
 
 			if (memberID === userID)
 			{
-				console.log(channel.name);
 				channelToJoin = channel.id;
 				break;
 			}
@@ -487,7 +511,7 @@ PlayAudio = function (data)
 	PlaySound(file, channelToJoin);
 };
 
-StopAudio = function (data)
+StopAudio = function ()
 {
 	try
 	{
@@ -500,6 +524,7 @@ StopAudio = function (data)
 		}, 200);
 	} catch (e)
 	{
+		logger.error(e);
 	}
 };
 
@@ -525,7 +550,7 @@ ListSounds = function (data)
 {
 	var message = "";
 
-	fs.readdir('sounds', function (err, files)
+	fs.readdir("sounds", function (err, files)
 	{
 		if (!err)
 		{
@@ -537,7 +562,7 @@ ListSounds = function (data)
 
 				if ((file.lastIndexOf(".mp3") > -1) || (file.lastIndexOf(".wav") > -1))
 				{
-					message += file.substr(0, file.lastIndexOf('.')) + "\n";
+					message += file.substr(0, file.lastIndexOf(".")) + "\n";
 				}
 			}
 
@@ -550,7 +575,7 @@ ListSounds = function (data)
 // !remindme yyyy-mm-dd message
 RemindMe = function (data)
 {
-	var delay;
+	//var delay;
 	console.log(data);
 
 	if (typeof data.pars[0] == Number)
@@ -561,7 +586,7 @@ RemindMe = function (data)
 
 ReloadCommands = function (data)
 {
-	if (data.userID == '114667432852979712')
+	if (data.userID == "114667432852979712")
 	{
 		LoadCommands();
 		SendMessage("Reloading commands!", data.channelID);
@@ -579,7 +604,7 @@ DeleteThis = function (data)
 		SendMessage(data.message, data.channelID);
 };
 
-StartRadio = function (data)
+StartRadio = function ()
 {
 	radioBot = new RadioBot();
 };
