@@ -52,11 +52,7 @@ app.use('', express.static(__dirname + '/public'));
 
 app.get('/', function (req, res)
 {
-	/*bot.username = username;
-	 bot.email =  email;
-	 bot.password = password;*/
-	bot.connect();
-	bot.setPresence();
+
 });
 
 bot.on('ready', function ()
@@ -174,14 +170,14 @@ function PlaySound (file, channel, callback, finished)
 {
 	var StartPlaying = function ()
 	{
-		bot.testAudio({ channel: channel, stereo: true }, function (streamPar)
+		bot.getAudioContext({ channel: channel, stereo: true }, function (streamPar)
 		{
 			stream = streamPar;
 			stream.playAudioFile(file);
 			playing = true;
 			stream.channelID = channel;
 
-			stream.on('fileEnd', function ()
+			stream.once('fileEnd', function ()
 			{
 				playing = false;
 

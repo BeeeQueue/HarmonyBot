@@ -49,7 +49,7 @@ function RadioBot ()
 	{
 		var StartPlaying = function ()
 		{
-			bot.testAudio({ channel: channel, stereo: true }, function (streamPar)
+			bot.getAudioContext({ channel: channel, stereo: true }, function (streamPar)
 			{
 				console.log(file);
 				currSong = file.substr(0, file.lastIndexOf("."));
@@ -58,7 +58,7 @@ function RadioBot ()
 				stream.channelID = channel;
 
 
-				stream.on('fileEnd', function ()
+				stream.once('fileEnd', function ()
 				{
 					if (radioOn === true)
 					{
