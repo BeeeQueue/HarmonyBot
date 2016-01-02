@@ -71,6 +71,25 @@ fs.readFile("config.json", function (err, res)
 });
 //endregion
 
+var usePaths = ['rel'];
+//region app.use Config
+
+for (var i = 0; i < usePaths.length; i++)
+{
+	var temp = usePaths[i];
+
+	app.use('/' + temp, function (req, res, next)
+	{
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Methods', 'POST');
+		res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+		res.setHeader('Access-Control-Allow-Credentials', true);
+		next();
+	});
+}
+
+app.use(bodyParser());
+//endregion
 
 //region Logger init
 var logger = new (winston.Logger)({
@@ -116,9 +135,11 @@ var _StartBot = function ()
 
 	app.use("", express.static(__dirname + "/public"));
 
-	app.get("/", function (req, res)
+	app.get("/rel", function (req, res)
 	{
-		res("Hello!");
+		LoadCommands();
+
+		res("Reloaded!");
 	});
 
 	bot.on("message", function (user, userID, channelID, message, rawEvent)
@@ -308,7 +329,7 @@ var _StartBot = function ()
 		return (dd[1] ? dd : "0" + dd[0]) + "/" + (mm[1] ? mm : "0" + mm[0]) + " " + yyyy; // string
 	}
 
-//endregion
+	//endregion
 
 
 	http.listen(config.port, function ()
@@ -636,5 +657,5 @@ var _StartBot = function ()
 		if (data.message != null && data.message != "")
 			SendMessage(data.message, data.channelID);
 	};
-}
-//endregion
+	//endregion
+};
