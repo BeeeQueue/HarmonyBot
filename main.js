@@ -73,7 +73,6 @@ fs.readFile("config.json", function (err, res)
 
 var usePaths = ['rel'];
 //region app.use Config
-
 for (var i = 0; i < usePaths.length; i++)
 {
 	var temp = usePaths[i];
@@ -87,8 +86,6 @@ for (var i = 0; i < usePaths.length; i++)
 		next();
 	});
 }
-
-app.use(bodyParser());
 //endregion
 
 //region Logger init
