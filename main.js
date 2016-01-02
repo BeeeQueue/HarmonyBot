@@ -56,7 +56,7 @@ fs.readFile("config.json", function (err, res)
 				logger.info("Connected!");
 				bot.setPresence({
 					idle_since: null,
-					game:       "with himself"
+					game:       config.game || "poker against itself"
 				});
 
 				_StartBot();
