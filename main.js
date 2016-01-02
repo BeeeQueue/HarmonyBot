@@ -331,7 +331,7 @@ var _StartBot = function ()
 
 	http.listen(config.port, function ()
 	{
-		require('dns').lookup(require('os').hostname(), function (err, dad, fam)
+		require('dns').lookup(require('os').hostname(), function (err, add, fam)
 		{
 			console.log();
 			logger.info("listening on " + add + ":" + config.port);
