@@ -13,11 +13,6 @@
  * 115789865286762502 | HarmonyBot
  */
 
-
-// Bot info
-var email    = "daddatv@live.se",
-    password = "discordbot";
-
 // Misc. vars
 // Requires
 const express    = require("express"),
@@ -29,7 +24,7 @@ const express    = require("express"),
       ServerInfo = require("./serverInfo"),
       remindMe   = require("./remindMe");
 
-var bot, config;
+var bot, config, debugMode = false;
 
 //region Bot Init
 fs.readFile("config.json", function (err, res)
@@ -37,6 +32,12 @@ fs.readFile("config.json", function (err, res)
 	if (!err)
 	{
 		config = JSON.parse(res);
+
+		if (config.debug == true)
+		{
+			debugMode = true;
+			console.log("[DEBUG MODE ENABLED]");
+		}
 
 		if (!config.email || !config.password)
 		{
@@ -141,6 +142,9 @@ var _StartBot = function ()
 
 	bot.on("message", function (user, userID, channelID, message, rawEvent)
 	{
+		if ((channelID == ServerInfo.channels.bot && !debugMode) || (debugMode && channelID != ServerInfo.channels.bot))
+			return;
+
 		var lowerCaseMessage = message.toLowerCase();
 
 		//region Command
@@ -161,6 +165,7 @@ var _StartBot = function ()
 
 			logger.log("debug", "Got command " + com + " from " + user + "!");
 
+			//noinspection JSUnresolvedVariable
 			var data = commands.commands[com];
 
 			if (data != null)
@@ -331,9 +336,8 @@ var _StartBot = function ()
 
 	http.listen(config.port, function ()
 	{
-		require('dns').lookup(require('os').hostname(), function (err, add, fam)
+		require('dns').lookup(require('os').hostname(), function (err, add)
 		{
-			console.log();
 			logger.info("listening on " + add + ":" + config.port);
 		});
 	});
@@ -533,33 +537,34 @@ var _StartBot = function ()
 			if (res === false)
 			{
 				SendMessage("That file doesn't exist!\nGet a list of all the sounds with !sounds", data.channelID);
-				return;
+			}
+			else
+			{
+				// Check which, if any, channel the caller is in.
+				for (var j = 0; j < Object.keys(voiceChannels).length; j++)
+				{
+					var channel = voiceChannels[Object.keys(voiceChannels)[j]];
+
+					for (var k = 0; k < Object.keys(channel.members).length; k++)
+					{
+						var memberID = Object.keys(channel.members)[k];
+
+						if (memberID === userID)
+						{
+							channelToJoin = channel.id;
+							break;
+						}
+					}
+
+					if (channelToJoin !== undefined)
+					{
+						break;
+					}
+				}
+
+				PlaySound(file, channelToJoin);
 			}
 		});
-
-		// Check which, if any, channel the caller is in.
-		for (var j = 0; j < Object.keys(voiceChannels).length; j++)
-		{
-			var channel = voiceChannels[Object.keys(voiceChannels)[j]];
-
-			for (var k = 0; k < Object.keys(channel.members).length; k++)
-			{
-				var memberID = Object.keys(channel.members)[k];
-
-				if (memberID === userID)
-				{
-					channelToJoin = channel.id;
-					break;
-				}
-			}
-
-			if (channelToJoin !== undefined)
-			{
-				break;
-			}
-		}
-
-		PlaySound(file, channelToJoin);
 	};
 
 	StopAudio = function ()

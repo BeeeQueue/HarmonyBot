@@ -14,7 +14,7 @@ module.exports.voiceChannels = {
 	doterfags: '114748723472498693',
 	afk:       '114694755526508544',
 	radio:      '120989948080947201',
-	bot2:      '120989997573603328'
+	bot:      '120989997573603328'
 };
 
 module.exports.users = {
