@@ -142,7 +142,7 @@ var _StartBot = function ()
 
 	bot.on("message", function (user, userID, channelID, message, rawEvent)
 	{
-		if ((channelID == ServerInfo.voiceChannels.bot && !debugMode) || (debugMode && channelID != ServerInfo.voiceChannels.bot))
+		if ((channelID == ServerInfo.textChannels.bot && !debugMode) || (debugMode && channelID != ServerInfo.textChannels.bot))
 			return;
 
 		var lowerCaseMessage = message.toLowerCase();
