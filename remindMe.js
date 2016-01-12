@@ -43,7 +43,7 @@
 			if (!err)
 			{
 				reminders = JSON.parse(data);
-				console.log("Successfully loaded " + path);
+				//console.log("Successfully loaded " + path);
 			}
 			else
 			{

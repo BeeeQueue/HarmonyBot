@@ -13,18 +13,67 @@
  * 115789865286762502 | HarmonyBot
  */
 
-// Misc. vars
 // Requires
-const express    = require("express"),
-      app        = express(),
-      http       = require("http").Server(app),
-      fs         = require("fs"),
-      winston    = require("winston"),
-      DiscordIO  = require("discord.io"),
-      ServerInfo = require("./serverInfo"),
-      remindMe   = require("./remindMe");
+var express    = require("express"),
+    app        = express(),
+    http       = require("http").Server(app),
+    fs         = require("fs"),
+    winston    = require("winston"),
+    DiscordIO  = require("discord.io"),
+    ServerInfo = require("./serverInfo"),
+    remindMe   = require("./remindMe");
 
 var bot, config, debugMode = false;
+
+
+var usePaths = ['rel'];
+//region app.use Config
+for (var i = 0; i < usePaths.length; i++)
+{
+	var temp = usePaths[i];
+
+	app.use('/' + temp, function (req, res, next)
+	{
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Methods', 'POST');
+		res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+		res.setHeader('Access-Control-Allow-Credentials', true);
+		next();
+	});
+}
+//endregion
+
+
+//region Logger init
+var logger = new (winston.Logger)({
+	transports: [
+		new (winston.transports.Console),
+		new (winston.transports.File)({
+			filename: "output/session.log"
+		}),
+		new (winston.transports.File)({
+			name:      "error-file",
+			filename:  "output/error.log",
+			silent:    false,
+			level:     "errorFile",
+			showLevel: false
+		}),
+		new (winston.transports.Console)({
+			name:         "error-redirect",
+			level:        "error",
+			stdErrLevels: ["errorFile", "errorConsole"]
+		}),
+		new (winston.transports.Console)({
+			name:                            "error-console",
+			level:                           "errorConsole",
+			humanReadableUnhandledException: true
+		})
+	]
+});
+
+fs.writeFile("output/session.log", "");
+//endregion
+
 
 //region Bot Init
 fs.readFile("config.json", function (err, res)
@@ -33,15 +82,20 @@ fs.readFile("config.json", function (err, res)
 	{
 		config = JSON.parse(res);
 
-		if (config.debug == true)
+		// DEBUG MODE
+		if (config.debug === true)
 		{
 			debugMode = true;
 			console.log("[DEBUG MODE ENABLED]");
 		}
+		else
+		{
+			logger.remove(logger.transports["console"]);
+		}
 
+		// CONFIG CHECKING
 		if (!config.email || !config.password)
 		{
-			//console.log("Missing email or password in config file!");
 			logger.error("Missing email or password in config file!");
 		}
 		else
@@ -72,53 +126,6 @@ fs.readFile("config.json", function (err, res)
 });
 //endregion
 
-var usePaths = ['rel'];
-//region app.use Config
-for (var i = 0; i < usePaths.length; i++)
-{
-	var temp = usePaths[i];
-
-	app.use('/' + temp, function (req, res, next)
-	{
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Methods', 'POST');
-		res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-		res.setHeader('Access-Control-Allow-Credentials', true);
-		next();
-	});
-}
-//endregion
-
-//region Logger init
-var logger = new (winston.Logger)({
-	transports: [
-		new (winston.transports.File)({
-			name:         "info-file",
-			filename:     "output/session.log",
-			level:        "info",
-			stdErrLevels: ["infoSessionFile"]
-		}),
-		new (winston.transports.File)({
-			name:      "error-file",
-			filename:  "output/error.log",
-			level:     "errorFile",
-			showLevel: false
-		}),
-		new (winston.transports.Console)({
-			name:         "error-redirect",
-			level:        "error",
-			stdErrLevels: ["errorFile", "errorConsole"]
-		}),
-		new (winston.transports.Console)({
-			name:                            "error-console",
-			level:                           "errorConsole",
-			humanReadableUnhandledException: true
-		})
-	]
-});
-
-fs.writeFile("output/session.log", "");
-//endregion
 
 var _StartBot = function ()
 {
@@ -163,7 +170,10 @@ var _StartBot = function ()
 
 			par = message.substring(message.indexOf(" ") + 1).split(" ");
 
-			logger.log("debug", "Got command " + com + " from " + user + "!");
+			if (par[0] == "!" + com)
+				par = null;
+
+			logger.debug("Got command " + com + " from " + user + "!");
 
 			//noinspection JSUnresolvedVariable
 			var data = commands.commands[com];
@@ -174,10 +184,11 @@ var _StartBot = function ()
 				data.userID = userID;
 				data.channelID = channelID;
 				data.messageID = rawEvent.d.id;
+				data.msg = message;
 				data.commandName = com;
 				data.pars = par;
 
-				logger.info(user + " used command " + com + (par != undefined || par != "" ? " with parameters: " + par.toString() + "" : ""));
+				logger.info(user + " used command " + com + (data.pars ? " with parameters: " + data.pars + "" : ""));
 				global[data.type](data);
 			}
 			else
@@ -200,6 +211,7 @@ var _StartBot = function ()
 					data.userID = userID;
 					data.channelID = channelID;
 					data.messageID = rawEvent.d.id;
+					data.msg = message;
 
 					logger.info(user + " said keyword " + word);
 					global[data.type](data);
@@ -226,7 +238,7 @@ var _StartBot = function ()
 	{
 		logger.info("Disconnected!");
 	});
-//endregion_StartBot();_StartBot();_StartBot();_StartBot();
+	//endregion
 
 
 	function SendMessage (message, id, doFormat)
@@ -284,20 +296,44 @@ var _StartBot = function ()
 
 	function LoadCommands ()
 	{
-		fs.readFile("commands.json", function (err, data)
+		require("https").get("https://dl.dropboxusercontent.com/u/29393121/hmny/commands.json", function (res)
 		{
-			if (!err)
+			var response = "";
+
+			res.on("data", function (chunk)
 			{
-				commands = JSON.parse(data);
+				response += chunk;
+			});
+
+			res.on("end", function ()
+			{
+				commands = JSON.parse(response);
 				keywords = Object.keys(commands.keywords);
-				logger.info("Successfully loaded commands.json");
-			}
-			else
+				fs.writeFile("commands.json", response);
+				logger.info("Successfully loaded commands from cloud");
+			});
+
+			res.on("error", function (e)
 			{
-				logger.error(JSON.stringify(err));
-			}
+				logger.error(e);
+
+				fs.readFile("commands.json", function (err, data)
+				{
+					if (!err)
+					{
+						commands = JSON.parse(data);
+						keywords = Object.keys(commands.keywords);
+						logger.info("Successfully loaded commands.json");
+					}
+					else
+					{
+						logger.error(JSON.stringify(err));
+					}
+				});
+			});
 		});
 	}
+
 
 	//region Misc. Functions
 	function GetRandomInt (min, max)
@@ -334,19 +370,10 @@ var _StartBot = function ()
 	//endregion
 
 
-	http.listen(config.port, function ()
-	{
-		require('dns').lookup(require('os').hostname(), function (err, add)
-		{
-			logger.info("listening on " + add + ":" + config.port);
-		});
-	});
-
-
 	//region Command functions
 
 	/*   data variable:
-	 *   user(name), userID, channelID, commandName
+	 *   user(name), userID, channelID, commandName, messageID, commandName, pars
 	 *   command variables can be found in commands.json
 	 */
 
@@ -660,4 +687,14 @@ var _StartBot = function ()
 			SendMessage(data.message, data.channelID);
 	};
 	//endregion
+
+
+	http.listen(config.port, function ()
+	{
+		require('dns').lookup(require('os').hostname(), function (err, add)
+		{
+			logger.info("Listening on " + add + ":" + config.port);
+		});
+	});
+
 };
