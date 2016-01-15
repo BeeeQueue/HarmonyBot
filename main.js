@@ -207,14 +207,14 @@ var _StartBot = function ()
 				{
 					var word = lowerCaseMessage.substr(lowerCaseMessage.indexOf(keywords[i]), keywords[i].length);
 					//noinspection JSUnresolvedVariable
-					data = commands.keywords[input];
+					data = commands.keywords[word];
 					data.user = user;
 					data.userID = userID;
 					data.channelID = channelID;
 					data.messageID = rawEvent.d.id;
 					data.msg = message;
 
-					logger.info(user + " said keyword " + input);
+					logger.info(user + " said keyword " + word);
 					global[data.type](data);
 
 					break;
@@ -482,7 +482,7 @@ var _StartBot = function ()
 	ImageResponse = function (data)
 	{
 		bot.uploadFile({
-			"file":    "img/" + data.image,
+			"file":    fs.createReadStream("img/" + data.image),
 			"to": data.channelID
 		});
 	};
