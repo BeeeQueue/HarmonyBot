@@ -21,7 +21,8 @@ var express    = require("express"),
     winston    = require("winston"),
     DiscordIO  = require("discord.io"),
     ServerInfo = require("./serverInfo"),
-    remindMe   = require("./remindMe");
+    remindMe   = require("./remindMe"),
+    urban      = require("./urban-dictionary/urban-node");
 
 var bot, config, debugMode = false;
 
@@ -206,14 +207,14 @@ var _StartBot = function ()
 				{
 					var word = lowerCaseMessage.substr(lowerCaseMessage.indexOf(keywords[i]), keywords[i].length);
 					//noinspection JSUnresolvedVariable
-					data = commands.keywords[word];
+					data = commands.keywords[input];
 					data.user = user;
 					data.userID = userID;
 					data.channelID = channelID;
 					data.messageID = rawEvent.d.id;
 					data.msg = message;
 
-					logger.info(user + " said keyword " + word);
+					logger.info(user + " said keyword " + input);
 					global[data.type](data);
 
 					break;
@@ -241,6 +242,12 @@ var _StartBot = function ()
 	//endregion
 
 
+	/**
+	 * SendMessage
+	 * @param message
+	 * @param id
+	 * @param doFormat
+	 */
 	function SendMessage (message, id, doFormat)
 	{
 		if (message.indexOf("http") === -1 && (doFormat == undefined || doFormat == true))
@@ -686,6 +693,41 @@ var _StartBot = function ()
 		if (data.message != null && data.message != "")
 			SendMessage(data.message, data.channelID);
 	};
+
+
+	LookUpUrbanDictionary = function (data)
+	{
+		var input = "";
+
+		if (!data.pars)
+		{
+			SendMessage("Usage: !urban [words here]\nQuite simple, yes?", data.channelID);
+			return;
+		}
+
+		if (data.pars.length < 2)
+		{
+			input = data.pars[0];
+		}
+		else
+		{
+			for (var i = 0; i < data.pars.length; i++)
+			{
+				input += data.pars[i] + " ";
+			}
+			input = input.trim();
+		}
+
+		urban.LookUp(input, function (definition)
+		{
+			SendMessage(definition, data.channelID, false);
+		});
+	};
+
+	/*   data variable:
+	 *   user(name), userID, channelID, commandName, messageID, commandName, pars
+	 *   command variables can be found in commands.json
+	 */
 	//endregion
 
 
@@ -693,6 +735,10 @@ var _StartBot = function ()
 	{
 		require('dns').lookup(require('os').hostname(), function (err, add)
 		{
+			if (!debugMode)
+			{
+				console.log("Listening on " + add + ":" + config.port);
+			}
 			logger.info("Listening on " + add + ":" + config.port);
 		});
 	});

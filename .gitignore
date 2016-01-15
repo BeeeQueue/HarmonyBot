@@ -3,6 +3,7 @@ sounds/*
 output/*
 tenc
 config.json
+commands.json
 
 # Logs
 logs
