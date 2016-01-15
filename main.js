@@ -483,7 +483,7 @@ var _StartBot = function ()
 	{
 		bot.uploadFile({
 			"file":    "img/" + data.image,
-			"channel": data.channelID
+			"to": data.channelID
 		});
 	};
 
