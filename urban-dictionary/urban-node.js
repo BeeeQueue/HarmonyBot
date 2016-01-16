@@ -60,23 +60,29 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 		var messageLines = [],
 		    message      = "",
 		    inputSplit   = data.input.split(" "),
-		    whichDef     = data.whichDef;
-		
-		if (whichDef === "last")
-		{
-			whichDef = data.list.length - 1;
-		}
-		
+		    whichDef     = data.whichDef,
+		    typeOfResult = "top";
+
 		if (data.result_type === "exact")
 		{
 			if (data.list[whichDef])
 			{
 				var def = data.list[whichDef];
 
+				if (whichDef === "last" || whichDef === data.list.length)
+				{
+					whichDef = data.list.length - 1;
+					typeOfResult = "worst";
+				}
+				else if (whichDef !== 0)
+				{
+					typeOfResult = ordinal_suffix_of(whichDef + 1);
+				}
+
 				messageLines.push("``` ```");
-				messageLines.push("UrbanDictionary's top definition of `" + data.input + "`:");
+				messageLines.push("UrbanDictionary's " + typeOfResult + " definition of `" + data.input + "` out of " + data.list.length + ":");
 				messageLines.push("");
-				messageLines.push(def.definition);
+				messageLines.push(def.definition.replace(/]/g, "`").replace(/\[/g, "`"));
 				messageLines.push("");
 				messageLines.push('Example:\n' + def.example);
 				messageLines.push("");
@@ -92,7 +98,7 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 						tagMessage += data.tags[j] + ", ";
 					}
 
-					messageLines.push(tagMessage.substr(0, tagMessage.lastIndexOf(",")));
+					messageLines.push("`" + tagMessage.substr(0, tagMessage.lastIndexOf(",")) + "`");
 
 					messageLines.push("");
 				}
@@ -101,7 +107,7 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 			}
 			else
 			{
-				messageLines.push("There aren't " + (whichDef + 1) + " definitions of `" + data.input + "`");
+				messageLines.push("There aren't " + (whichDef + 1) + " definitions of `" + data.input + "`. Baka.");
 			}
 		}
 		else if (data.result_type === "no_results")
@@ -112,6 +118,7 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 		{
 			console.log(data.result_type);
 			messageLines.push("Something happened :(");
+			messageLines.push(data.result_type);
 		}
 
 		for (var k = 0; k < messageLines.length; k++)
@@ -120,5 +127,24 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 		}
 
 		callback(message);
+	}
+
+	function ordinal_suffix_of (i)
+	{
+		var j = i % 10,
+		    k = i % 100;
+		if (j == 1 && k != 11)
+		{
+			return i + "st";
+		}
+		if (j == 2 && k != 12)
+		{
+			return i + "nd";
+		}
+		if (j == 3 && k != 13)
+		{
+			return i + "rd";
+		}
+		return i + "th";
 	}
 }());

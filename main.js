@@ -21,7 +21,7 @@ var express    = require("express"),
     winston    = require("winston"),
     DiscordIO  = require("discord.io"),
     ServerInfo = require("./serverInfo"),
-    remindMe   = require("./remindMe"),
+    //remindMe   = require("./remindme-discord/remind-me"),
     urban      = require("./urban-dictionary/urban-node");
 
 var bot, config, debugMode = false;
@@ -117,6 +117,8 @@ fs.readFile("config.json", function (err, res)
 
 				_StartBot();
 			});
+			
+			remindMe.send = bot.sendMessage;
 		}
 	}
 	else

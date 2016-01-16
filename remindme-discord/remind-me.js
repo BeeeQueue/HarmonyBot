@@ -15,20 +15,19 @@
 
 	var path                   = 'reminders.json',
 	    reminders              = {},
-	    checkIntervalInMinutes = 1;
+	    checkIntervalInMinutes = 1,
+	    currentTime            = Date.now();
 
 	LoadReminders();
 
 	module.exports.NewReminder = function (data)
 	{
-		var rem = {
+		reminders[data.time] = {
 			'userID':  data.userID,
 			'message': data.message,
 			'created': data.created,
 			'date':    data.date
 		};
-
-		reminders[data.time] = rem;
 	};
 
 	setInterval(function ()
@@ -47,7 +46,7 @@
 			}
 			else
 			{
-				console.log(err);
+				console.err(err);
 			}
 		});
 	}
@@ -55,5 +54,26 @@
 	function SaveReminders ()
 	{
 		fs.writeFile(path, JSON.stringify(reminders));
+	}
+
+	function CheckReminders ()
+	{
+		var times = Object.keys(reminders);
+		currentTime = Date.now();
+
+		for (var i = 0; i < times.length; i++)
+		{
+			var time = times[i];
+
+			if (currentTime > time)
+			{
+				var reminder = reminders[time]
+
+				send({
+					to:      reminder.userID,
+					message: data.message
+				});
+			}
+		}
 	}
 }());
