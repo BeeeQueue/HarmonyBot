@@ -169,10 +169,13 @@ var _StartBot = function ()
 				com = message.substring(1);
 			}
 
+			// Split at "!command |par par par", then split "par par par" into array
 			par = message.substring(message.indexOf(" ") + 1).split(" ");
 
 			if (par[0] == "!" + com)
+			{
 				par = null;
+			}
 
 			logger.debug("Got command " + com + " from " + user + "!");
 
@@ -482,8 +485,8 @@ var _StartBot = function ()
 	ImageResponse = function (data)
 	{
 		bot.uploadFile({
-			"file":    fs.createReadStream("img/" + data.image),
-			"to": data.channelID
+			"file": fs.createReadStream("img/" + data.image),
+			"to":   data.channelID
 		});
 	};
 
@@ -701,7 +704,7 @@ var _StartBot = function ()
 
 		if (!data.pars)
 		{
-			SendMessage("Usage: !urban [words here]\nQuite simple, yes?", data.channelID);
+			SendMessage("Usage: !urban [words here] [options: -latest -(number)]\nQuite simple, yes?", data.channelID);
 			return;
 		}
 

@@ -10,6 +10,30 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 {
 	module.exports.LookUp = function (input, callback)
 	{
+		var inputSplit = input.split(" "),
+		    mod,
+		    whichDef   = 0,
+		    data;
+
+		if (inputSplit[inputSplit.length - 1][0] === "-")
+		{
+			mod = inputSplit[inputSplit.length - 1].substr(1);
+			input = input.substr(0, input.lastIndexOf(" ")).trim();
+
+			if (!isNaN(mod) && mod !== 0)
+			{
+				whichDef = (mod - 1 > 0) ? mod - 1 : 0;
+			}
+			else if (mod === "last")
+			{
+				whichDef = "last";
+			}
+			else
+			{
+				whichDef = 0;
+			}
+		}
+
 		var inputEncoded = input.replace(/ /g, "+");
 
 		http.get(baseURL + inputEncoded, function (res)
@@ -23,7 +47,8 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 
 			res.on("end", function ()
 			{
-				var data = JSON.parse(response);
+				data = JSON.parse(response);
+				data.whichDef = whichDef;
 				data.input = input;
 				HandleResponse(data, callback);
 			});
@@ -32,46 +57,66 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 
 	function HandleResponse (data, callback)
 	{
-		var messageLines = [];
-		var message = "";
-
+		var messageLines = [],
+		    message      = "",
+		    inputSplit   = data.input.split(" "),
+		    whichDef     = data.whichDef;
+		
+		if (whichDef === "last")
+		{
+			whichDef = data.list.length - 1;
+		}
+		
 		if (data.result_type === "exact")
 		{
-			var def = data.list[0];
-
-			messageLines.push("``` ```");
-			messageLines.push("UrbanDictionary's top definition of `" + data.input + "`:");
-			messageLines.push("");
-			messageLines.push(def.definition);
-			messageLines.push("");
-			messageLines.push('Example:\n' + def.example);
-			messageLines.push("");
-
-			if (data.tags && data.tags.length > 0)
+			if (data.list[whichDef])
 			{
-				messageLines.push("Also relevant:");
+				var def = data.list[whichDef];
 
-				var tagMessage = "";
-				for (var i = 0; i < 4; i++)
+				messageLines.push("``` ```");
+				messageLines.push("UrbanDictionary's top definition of `" + data.input + "`:");
+				messageLines.push("");
+				messageLines.push(def.definition);
+				messageLines.push("");
+				messageLines.push('Example:\n' + def.example);
+				messageLines.push("");
+
+				if (data.tags && data.tags.length > 0)
 				{
-					tagMessage += data.tags[i] + ", ";
+					messageLines.push("Also relevant:");
+
+					var tagMessage = "";
+
+					for (var j = 0; j < 4; j++)
+					{
+						tagMessage += data.tags[j] + ", ";
+					}
+
+					messageLines.push(tagMessage.substr(0, tagMessage.lastIndexOf(",")));
+
+					messageLines.push("");
 				}
 
-				messageLines.push(tagMessage.substr(0, tagMessage.lastIndexOf(",")));
-
-				messageLines.push("");
+				messageLines.push("``` ```");
 			}
-
-			messageLines.push("``` ```");
+			else
+			{
+				messageLines.push("There aren't " + (whichDef + 1) + " definitions of `" + data.input + "`");
+			}
+		}
+		else if (data.result_type === "no_results")
+		{
+			messageLines.push("Could not find any definitions of `" + data.input + "`!");
 		}
 		else
 		{
-			messageLines.push("Could not find exact definition of " + data.input + "!");
+			console.log(data.result_type);
+			messageLines.push("Something happened :(");
 		}
 
-		for (var i = 0; i < messageLines.length; i++)
+		for (var k = 0; k < messageLines.length; k++)
 		{
-			message += messageLines[i] + "\n";
+			message += messageLines[k] + "\n";
 		}
 
 		callback(message);
