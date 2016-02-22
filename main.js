@@ -17,15 +17,21 @@
 var express    = require("express"),
     app        = express(),
     http       = require("http").Server(app),
+    https      = require("https"),
     fs         = require("fs"),
     winston    = require("winston"),
     DiscordIO  = require("discord.io"),
     ServerInfo = require("./serverInfo"),
-    //remindMe   = require("./remindme-discord/remind-me"),
-    urban      = require("./urban-dictionary/urban-node");
+    urban      = require("./urban-dictionary/urban-node"),
+    Statscord  = require("./statscord/statscord");
 
-var bot, config, debugMode = false;
+var bot,
+    stats,
+    config,
+    debugMode  = false,
+    ASSEMBLING = false;
 
+var messagesSent = 0;
 
 var usePaths = ['rel'];
 //region app.use Config
@@ -115,10 +121,22 @@ fs.readFile("config.json", function (err, res)
 					game:       config.game || "poker against itself"
 				});
 
+				if (config.statscord)
+				{
+					stats = new Statscord(config.statsInterval, config.databases.statscord);
+					stats.on("error", function (err)
+					{
+						logger.error("Statscord encountered an error:\n" + err);
+					});
+				}
+
 				_StartBot();
 			});
-			
-			remindMe.send = bot.sendMessage;
+
+			bot.on("disconnect", function ()
+			{
+				bot.connect();
+			});
 		}
 	}
 	else
@@ -134,8 +152,10 @@ var _StartBot = function ()
 {
 	var stream,
 	    lastMessageID,
+	    assembleMsgID,
+	    assembledUsers = [],
 	    lastRandom,
-	    playing = false;
+	    playing        = false;
 
 	var commands = {}, keywords = [];
 
@@ -152,13 +172,15 @@ var _StartBot = function ()
 
 	bot.on("message", function (user, userID, channelID, message, rawEvent)
 	{
-		if ((channelID == ServerInfo.textChannels.bot && !debugMode) || (debugMode && channelID != ServerInfo.textChannels.bot))
+		if (userID == bot.id && (channelID == ServerInfo.textChannels.bot && !debugMode) || (debugMode && (channelID != ServerInfo.textChannels.bot)))
 			return;
+
+		messagesSent++;
 
 		var lowerCaseMessage = message.toLowerCase();
 
 		//region Command
-		if (message[0] === "!")
+		if (message[0] === "!" && rawEvent.d.attachments.length === 0)
 		{
 			var com, par;
 
@@ -202,6 +224,13 @@ var _StartBot = function ()
 				logger.info(user + " tried to use command " + com + " which doesn't exist");
 			}
 		}
+		/*else if (rawEvent.d.attachments.length === 1)
+		 {
+		 var data = {};
+		 data.userID = userID;
+
+		 ChangeImage(data, rawEvent.d.attachments[0]);
+		 }*/
 		else
 		//endregion
 		{
@@ -228,9 +257,18 @@ var _StartBot = function ()
 			//endregion
 		}
 
-
 		lastMessageID = rawEvent.d.id;
 	});
+
+	if (config.statscord)
+	{
+		stats.on("GetStats", function ()
+		{
+			logger.info("Updated database with current statistics");
+			stats.updateDatabase(messagesSent, GetOnlineUsers("114684402830671877") - 1); // At least one is a bot (this one! :D)
+			messagesSent = 0;
+		});
+	}
 
 
 	//region Debugging
@@ -308,42 +346,76 @@ var _StartBot = function ()
 
 	function LoadCommands ()
 	{
-		require("https").get("https://dl.dropboxusercontent.com/u/29393121/hmny/commands.json", function (res)
+		if (!debugMode)
 		{
-			var response = "";
-
-			res.on("data", function (chunk)
+			require("https").get("https://dl.dropboxusercontent.com/u/29393121/hmny/commands.json", function (res)
 			{
-				response += chunk;
-			});
+				var response = "";
 
-			res.on("end", function ()
-			{
-				commands = JSON.parse(response);
-				keywords = Object.keys(commands.keywords);
-				fs.writeFile("commands.json", response);
-				logger.info("Successfully loaded commands from cloud");
-			});
-
-			res.on("error", function (e)
-			{
-				logger.error(e);
-
-				fs.readFile("commands.json", function (err, data)
+				res.on("data", function (chunk)
 				{
-					if (!err)
+					response += chunk;
+				});
+
+				res.on("end", function ()
+				{
+					commands = JSON.parse(response);
+					keywords = Object.keys(commands.keywords);
+					fs.writeFile("commands.json", response);
+					logger.info("Successfully loaded commands from cloud");
+				});
+
+				res.on("error", function (e)
+				{
+					logger.error(e);
+
+					fs.readFile("commands.json", function (err, data)
 					{
-						commands = JSON.parse(data);
-						keywords = Object.keys(commands.keywords);
-						logger.info("Successfully loaded commands.json");
-					}
-					else
-					{
-						logger.error(JSON.stringify(err));
-					}
+						if (!err)
+						{
+							commands = JSON.parse(data);
+							keywords = Object.keys(commands.keywords);
+							logger.info("Successfully loaded commands.json");
+						}
+						else
+						{
+							logger.error(JSON.stringify(err));
+						}
+					});
 				});
 			});
-		});
+		}
+		else
+		{
+			fs.readFile("commandsTesting.json", function (err, data)
+			{
+				if (!err)
+				{
+					commands = JSON.parse(data);
+					keywords = Object.keys(commands.keywords);
+					logger.info("Successfully loaded commandsTesting.json");
+				}
+				else
+				{
+					logger.error(JSON.stringify(err));
+				}
+			});
+		}
+	}
+
+	function GetOnlineUsers (serverID)
+	{
+		var members = bot.servers[serverID].members,
+		    keys    = Object.keys(members),
+		    temp    = 0;
+
+		for (var i = 0; i < keys.length; i++)
+		{
+			if (members[keys[i]].status == "online" || members[keys[i]].status == "idle")
+				temp++;
+		}
+		
+		return temp;
 	}
 
 
@@ -727,6 +799,44 @@ var _StartBot = function ()
 		{
 			SendMessage(definition, data.channelID, false);
 		});
+	};
+
+	/*ChangeImage = function (data, attachment)
+	 {
+	 if (data.userID === ServerInfo.users.bq)
+	 {
+	 var filename = attachment.filename,
+	 hostname = attachment.url.substr(8, attachment.url.length - 1),
+	 path = hostname.substr(hostname.indexOf("/"), hostname.length - 1);
+
+	 console.log(hostname + " " + path);
+
+	 /!*https.request({
+	 method:"GET",
+	 "hostname":"https://cdn.discordapp.com/attachments/123068348471705600/138359088525475840/alliance.png"
+	 });*!/
+	 }
+	 };*/
+
+	/*
+	 "ASSEMBLE": {
+	 "type": "Assemble",
+	 "users": [
+	 "114686865172332544",
+	 "114693293329219585",
+	 "114745978925481989",
+	 "114791446246064137",
+	 "107530243975176192",
+	 "114667432852979712"
+	 ]
+	 },
+	 */
+	Assemble = function (data)
+	{
+		for (var user in data.users)
+		{
+			SendMessage(user, "ASSEMBLING TIME!\nAnswer (y)es or (n)o!");
+		}
 	};
 
 	/*   data variable:

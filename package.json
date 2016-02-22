@@ -1,12 +1,13 @@
 {
   "name": "HarmonyBot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "dependencies": {
     "body-parser": "~1.13.2",
     "discord.io": "^1.4.13",
     "express": "~4.13.1",
     "fs": "~0.0.2",
+    "mysql": "^2.10.2",
     "node-opus": "^0.1.11",
     "winston": "^2.1.1"
   }

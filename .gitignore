@@ -4,6 +4,8 @@ output/*
 tenc
 config.json
 commands.json
+commandsTesting.json
+snapcord/snapcord.js
 
 # Logs
 logs

@@ -1,6 +1,16 @@
 {
-  "email":"email@mail.com",
-  "password":"password",
-  "port":3000,
-  "game":"the game of life"
+  "email": "email@mail.com",
+  "password": "password",
+  "port": 3000,
+  "game": "the game of life",
+  "statscord": false,
+  "statsInterval": 6 0,
+  "databases": {
+    "statscord": {
+      "host": "hostIP",
+      "user": "user",
+      "password": "password",
+      "database": "schema"
+    }
+  }
 }
