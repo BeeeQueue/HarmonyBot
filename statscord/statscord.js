@@ -8,7 +8,7 @@ var EE = require("events").EventEmitter;
 var mysql;
 
 function Statscord (interval, database)
-{
+{   
 	mysql = MySQL.createConnection({
 		host:     database.host,
 		user:     database.user,
@@ -23,9 +23,9 @@ function Statscord (interval, database)
 	setInterval(function ()
 	{
 		self.emit("GetStats");
-	}, interval * 60000);
+	}, interval * 60 * 1000);
 
-	self.updateDatabase = function (messagesSent, usersOnline)
+	self.updateUserStats = function (messagesSent, usersOnline)
 	{
 		var now = new Date();
 
@@ -36,13 +36,17 @@ function Statscord (interval, database)
 		var time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
 
 		var dateTime = date + " " + time;
-		var query = "INSERT INTO main.statscord (time, messages, usersonline, date) VALUES ('" + now.getTime() + "', '" + messagesSent + "', '" + usersOnline + "', '" + dateTime + "');";
+		var query = "INSERT INTO " + database.database + "." + database.table + " (time, messages, usersonline, date) VALUES ('" + now.getTime() + "', '" + messagesSent + "', '" + usersOnline + "', '" + dateTime + "');";
 
 		mysql.query(query, function (err, rows, fields)
 		{
 			if (err)
 			{
 				self.emit("error", err);
+			}
+			else
+			{
+				self.emit("log", "Updated user stats");
 			}
 		});
 	};

@@ -10,7 +10,8 @@
       "host": "hostIP",
       "user": "user",
       "password": "password",
-      "database": "schema"
+      "database": "schema",
+      "table":"table"
     }
   }
 }

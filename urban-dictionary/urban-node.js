@@ -67,8 +67,6 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 		{
 			if (data.list[whichDef])
 			{
-				var def = data.list[whichDef];
-
 				if (whichDef === "last" || whichDef === data.list.length)
 				{
 					whichDef = data.list.length - 1;
@@ -78,6 +76,8 @@ var baseURL = "http://api.urbandictionary.com/v0/define?term=";
 				{
 					typeOfResult = ordinal_suffix_of(whichDef + 1);
 				}
+				
+				var def = data.list[whichDef];
 
 				messageLines.push("``` ```");
 				messageLines.push("UrbanDictionary's " + typeOfResult + " definition of `" + data.input + "` out of " + data.list.length + ":");

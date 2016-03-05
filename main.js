@@ -14,19 +14,22 @@
  */
 
 // Requires
+require("datejs");
 var express    = require("express"),
     app        = express(),
     http       = require("http").Server(app),
     https      = require("https"),
     fs         = require("fs"),
     winston    = require("winston"),
-    DiscordIO  = require("discord.io"),
-    ServerInfo = require("./serverInfo"),
     urban      = require("./urban-dictionary/urban-node"),
-    Statscord  = require("./statscord/statscord");
+    mDiscordIO = require("discord.io"),
+    mStatscord = require("./statscord/statscord"),
+    mRemindMe  = require("./remind-me/remind-me"),
+    ServerInfo = require("./serverInfo");
 
 var bot,
-    stats,
+    statscord,
+    remindMe,
     config,
     debugMode  = false,
     ASSEMBLING = false;
@@ -52,11 +55,14 @@ for (var i = 0; i < usePaths.length; i++)
 
 
 //region Logger init
+var now = Date.parse("now").toString("yyyy-MM-dd HH:mm:ss");
+
+fs.closeSync(fs.openSync("./output/" + now + ".log", 'w'));
 var logger = new (winston.Logger)({
 	transports: [
 		new (winston.transports.Console),
 		new (winston.transports.File)({
-			filename: "output/session.log"
+			filename: "./output/" + now + ".log"
 		}),
 		new (winston.transports.File)({
 			name:      "error-file",
@@ -77,8 +83,8 @@ var logger = new (winston.Logger)({
 		})
 	]
 });
+now = null;
 
-fs.writeFile("output/session.log", "");
 //endregion
 
 
@@ -107,7 +113,7 @@ fs.readFile("config.json", function (err, res)
 		}
 		else
 		{
-			bot = new DiscordIO({
+			bot = new mDiscordIO({
 				email:    config.email,
 				password: config.password,
 				autorun:  true
@@ -121,16 +127,36 @@ fs.readFile("config.json", function (err, res)
 					game:       config.game || "poker against itself"
 				});
 
+				// Statscord
 				if (config.statscord)
 				{
-					stats = new Statscord(config.statsInterval, config.databases.statscord);
-					stats.on("error", function (err)
+					statscord = new mStatscord(config.statsInterval, config.databases.statscord);
+					statscord.on("error", function (err)
 					{
 						logger.error("Statscord encountered an error:\n" + err);
 					});
 				}
 
-				_StartBot();
+				//region RemindMe
+				remindMe = new mRemindMe(config.databases.remindme);
+				remindMe.on("error", function (err)
+				{
+					logger.error("RemindMe encountered an error:\n" + JSON.stringify(err, null, 2));
+				});
+				remindMe.on("log", function (log)
+				{
+					logger.info("RemindMe: " + log);
+				});
+				//endregion
+
+				try
+				{
+					_StartBot();
+				} catch (e)
+				{
+					logger.error(bot.username + " has crashed!\n" + JSON.stringify(e));
+					_StartBot(true);
+				}
 			});
 
 			bot.on("disconnect", function ()
@@ -148,7 +174,7 @@ fs.readFile("config.json", function (err, res)
 //endregion
 
 
-var _StartBot = function ()
+var _StartBot = function (didCrash)
 {
 	var stream,
 	    lastMessageID,
@@ -161,14 +187,35 @@ var _StartBot = function ()
 
 	LoadCommands();
 
-	app.use("", express.static(__dirname + "/public"));
+	remindMe.on("message", function (channelID, message)
+	{
+		SendMessage(message, channelID);
+	});
 
-	app.get("/rel", function (req, res)
+	if (didCrash == true)
+		SendMessage("I HAVE CRASHED BUT RESTARTED aaaaaa", ServerInfo.users.bq);
+
+	//region Web listens
+
+	//app.use("", express.static(__dirname + "/public"));
+
+	app.get("/reload", function (req, res)
 	{
 		LoadCommands();
 
 		res("Reloaded!");
 	});
+
+	app.get("/game/*", function (req, res)
+	{
+		bot.setPresence({ game: req.params[0] });
+		config.game = req.params[0];
+		WriteConfig();
+
+		res.send("<h1>Now \"playing\": <i>" + req.params[0] + "</i></h1>");
+	});
+
+	//endregion
 
 	bot.on("message", function (user, userID, channelID, message, rawEvent)
 	{
@@ -262,11 +309,16 @@ var _StartBot = function ()
 
 	if (config.statscord)
 	{
-		stats.on("GetStats", function ()
+		statscord.on("GetStats", function ()
 		{
 			logger.info("Updated database with current statistics");
-			stats.updateDatabase(messagesSent, GetOnlineUsers("114684402830671877") - 1); // At least one is a bot (this one! :D)
+			statscord.updateUserStats(messagesSent, GetOnlineUsers("114684402830671877") - 1); // At least one is a bot (this one! :D)
 			messagesSent = 0;
+		});
+
+		statscord.on("log", function (logString)
+		{
+			logger.info(logString);
 		});
 	}
 
@@ -403,21 +455,10 @@ var _StartBot = function ()
 		}
 	}
 
-	function GetOnlineUsers (serverID)
+	function WriteConfig ()
 	{
-		var members = bot.servers[serverID].members,
-		    keys    = Object.keys(members),
-		    temp    = 0;
-
-		for (var i = 0; i < keys.length; i++)
-		{
-			if (members[keys[i]].status == "online" || members[keys[i]].status == "idle")
-				temp++;
-		}
-		
-		return temp;
+		fs.writeFile("config.json", JSON.stringify(config, null, 2));
 	}
-
 
 	//region Misc. Functions
 	function GetRandomInt (min, max)
@@ -441,14 +482,22 @@ var _StartBot = function ()
 		return voiceChannels;
 	}
 
-	function DateToDDMMYYYY ()
+	/**
+	 * @return {number}
+	 */
+	function GetOnlineUsers (serverID)
 	{
-		var date = new Date(),
-		    yyyy = date.getFullYear().toString(),
-		    mm   = (date.getMonth() + 1).toString(), // getMonth() is zero-based
-		    dd   = date.getDate().toString();
+		var members = bot.servers[serverID].members,
+		    keys    = Object.keys(members),
+		    temp    = 0;
 
-		return (dd[1] ? dd : "0" + dd[0]) + "/" + (mm[1] ? mm : "0" + mm[0]) + " " + yyyy; // string
+		for (var i = 0; i < keys.length; i++)
+		{
+			if (members[keys[i]].status == "online" || members[keys[i]].status == "idle")
+				temp++;
+		}
+
+		return temp;
 	}
 
 	//endregion
@@ -738,17 +787,38 @@ var _StartBot = function ()
 		});
 	};
 
-	// !remindme x [minute|minutes|hour|hours|day|days|month|months|year|years] message
-	// !remindme yyyy-mm-dd message
+	// datejs.com
 	RemindMe = function (data)
 	{
-		//var delay;
-		console.log(data);
+		var input = "";
 
-		if (typeof data.pars[0] == Number)
+		for (var i = 0; i < data.pars.length; i++)
 		{
-			console.log(data.pars[0]);
+			input += data.pars[i] + " ";
 		}
+		input = input.trim();
+
+		data.message = input.substring(input.indexOf("\"") + 1, input.lastIndexOf("\""));
+		data.when = input.substr(0, input.indexOf("\""));
+
+		remindMe.addReminder(data);
+	};
+
+	RemindMeToo = function (data)
+	{
+		if (!isNaN(data.pars[0]))
+		{
+			remindMe.copyReminder(data);
+		}
+		else
+		{
+			SendMessage("Usage: !remindmetoo [Reminder ID]", data.channelID);
+		}
+	};
+
+	CancelReminder = function (data)
+	{
+		remindMe.removeReminder(data);
 	};
 
 	ReloadCommands = function (data)
@@ -778,7 +848,7 @@ var _StartBot = function ()
 
 		if (!data.pars)
 		{
-			SendMessage("Usage: !urban [words here] [options: -latest -(number)]\nQuite simple, yes?", data.channelID);
+			SendMessage("Usage: !urban [words here] [options: -last -(number)]\nQuite simple, yes?", data.channelID);
 			return;
 		}
 
