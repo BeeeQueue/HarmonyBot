@@ -264,7 +264,14 @@ var _StartBot = function (didCrash)
 				data.pars = par;
 
 				logger.info(user + " used command " + com + (data.pars ? " with parameters: " + data.pars + "" : ""));
-				global[data.type](data);
+
+				try
+				{
+					global[data.type](data);
+				} catch (e)
+				{
+					logger.error(JSON.stringify(e));
+				}
 			}
 			else
 			{
