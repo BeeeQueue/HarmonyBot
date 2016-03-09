@@ -270,8 +270,8 @@ var _StartBot = function (didCrash)
 					global[data.type](data);
 				} catch (e)
 				{
-					logger.error(JSON.stringify(e));
-					SendMessage("I have encountered an error running command !" + data.commandName + "\n\n" + JSON.stringify(e, null, 2), ServerInfo.users.bq);
+					logger.error(e);
+					SendMessage("I have encountered an error running command !" + data.commandName + "\n\n" + e, ServerInfo.users.bq);
 				}
 			}
 			else
