@@ -146,7 +146,7 @@ function RemindMe (database)
 
 		var sql = mysql.query(findQuery, function (err, rows, fields)
 		{
-			if (!err)
+			if (!err && rows.length > 0)
 			{
 				for (var i = 0; i < rows.length; i++)
 				{
@@ -171,8 +171,11 @@ function RemindMe (database)
 			}
 			else
 			{
-				err.query = sql.sql;
-				self.emit("error", err);
+				if (err)
+				{
+					err.query = sql.sql;
+					self.emit("error", err);
+				}
 			}
 		});
 	}

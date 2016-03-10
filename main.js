@@ -798,6 +798,12 @@ var _StartBot = function (didCrash)
 	// datejs.com
 	RemindMe = function (data)
 	{
+		if (data.pars.length < 1)
+		{
+			SendMessage("Usage: !remindme [DateJS.com date/time] \"[message]\"");
+			return;
+		}
+
 		var input = "";
 
 		for (var i = 0; i < data.pars.length; i++)
