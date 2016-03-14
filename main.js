@@ -55,7 +55,7 @@ for (var i = 0; i < usePaths.length; i++)
 
 
 //region Logger init
-var now = Date.parse("now").toString("yyyy-MM-dd HH:mm:ss");
+var now = Date.parse("now").toString("yyyy-MM-dd HHmmss");
 
 fs.closeSync(fs.openSync("./output/" + now + ".log", 'w'));
 var logger = new (winston.Logger)({
@@ -107,17 +107,27 @@ fs.readFile("config.json", function (err, res)
 		}
 
 		// CONFIG CHECKING
-		if (!config.email || !config.password)
+		if ((!config.email || !config.password) && !config.token)
 		{
-			logger.error("Missing email or password in config file!");
+			logger.error("Missing way to log in in config file!");
 		}
 		else
 		{
-			bot = new mDiscordIO({
-				email:    config.email,
-				password: config.password,
-				autorun:  true
-			});
+			if (config.token)
+			{
+				bot = new mDiscordIO({
+					token:   config.token,
+					autorun: true
+				});
+			}
+			else
+			{
+				bot = new mDiscordIO({
+					email:    config.email,
+					password: config.password,
+					autorun:  true
+				});
+			}
 
 			bot.on("ready", function ()
 			{
@@ -185,15 +195,15 @@ var _StartBot = function (didCrash)
 
 	var commands = {}, keywords = [];
 
+	if (didCrash == true)
+		SendMessage("I HAVE CRASHED BUT RESTARTED aaaaaa", ServerInfo.users.bq);
+	
 	LoadCommands();
 
 	remindMe.on("message", function (channelID, message)
 	{
 		SendMessage(message, channelID);
 	});
-
-	if (didCrash == true)
-		SendMessage("I HAVE CRASHED BUT RESTARTED aaaaaa", ServerInfo.users.bq);
 
 	//region Web listens
 
