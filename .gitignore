@@ -6,6 +6,7 @@ config.json
 commands.json
 commandsTesting.json
 snapcord/snapcord.js
+npm-debug.log
 
 # Logs
 logs

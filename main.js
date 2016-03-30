@@ -168,11 +168,6 @@ fs.readFile("config.json", function (err, res)
 					_StartBot(true);
 				}
 			});
-
-			bot.on("disconnect", function ()
-			{
-				bot.connect();
-			});
 		}
 	}
 	else
@@ -351,6 +346,7 @@ var _StartBot = function (didCrash)
 	bot.on("disconnected", function ()
 	{
 		logger.info("Disconnected!");
+		throw new Error("Gateway Closed");
 	});
 	//endregion
 
@@ -429,30 +425,41 @@ var _StartBot = function (didCrash)
 
 				res.on("end", function ()
 				{
-					commands = JSON.parse(response);
-					keywords = Object.keys(commands.keywords);
-					fs.writeFile("commands.json", response);
-					logger.info("Successfully loaded commands from cloud");
+					try
+					{
+						commands = JSON.parse(response);
+						keywords = Object.keys(commands.keywords);
+						fs.writeFile("commands.json", response);
+						logger.info("Successfully loaded commands from cloud");
+					} catch (e)
+					{
+						LoadLocalCommands();
+					}
 				});
 
 				res.on("error", function (e)
 				{
 					logger.error(e);
 
+					LoadLocalCommands();
+				});
+				
+				function LoadLocalCommands()
+				{
 					fs.readFile("commands.json", function (err, data)
 					{
 						if (!err)
 						{
 							commands = JSON.parse(data);
 							keywords = Object.keys(commands.keywords);
-							logger.info("Successfully loaded commands.json");
+							logger.info("Successfully loaded local commands");
 						}
 						else
 						{
 							logger.error(JSON.stringify(err));
 						}
 					});
-				});
+				}
 			});
 		}
 		else
