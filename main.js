@@ -25,11 +25,13 @@ var express    = require("express"),
     mDiscordIO = require("discord.io"),
     mStatscord = require("./statscord/statscord"),
     mRemindMe  = require("./remind-me/remind-me"),
+    mSDB       = require("./plugins/steamdb-irc-checker/sdb"),
     ServerInfo = require("./serverInfo");
 
 var bot,
     statscord,
     remindMe,
+    sdb,
     config,
     debugMode  = false,
     ASSEMBLING = false;
@@ -159,6 +161,18 @@ fs.readFile("config.json", function (err, res)
 				});
 				//endregion
 
+				/*//region SDB
+				sdb = new mSDB();
+				sdb.on("error", function (err)
+				{
+					logger.error("sdb encountered an error:\n" + JSON.stringify(err, null, 2));
+				});
+				sdb.on("log", function (log)
+				{
+					logger.info("sdb: " + log);
+				});
+				//endregion*/
+				
 				try
 				{
 					_StartBot();
@@ -192,7 +206,7 @@ var _StartBot = function (didCrash)
 
 	if (didCrash == true)
 		SendMessage("I HAVE CRASHED BUT RESTARTED aaaaaa", ServerInfo.users.bq);
-	
+
 	LoadCommands();
 
 	remindMe.on("message", function (channelID, message)
@@ -227,7 +241,8 @@ var _StartBot = function (didCrash)
 		if (userID == bot.id && (channelID == ServerInfo.textChannels.bot && !debugMode) || (debugMode && (channelID != ServerInfo.textChannels.bot)))
 			return;
 
-		messagesSent++;
+		if (channelID != "126784860210593792")
+			messagesSent++;
 
 		var lowerCaseMessage = message.toLowerCase();
 
@@ -345,8 +360,8 @@ var _StartBot = function (didCrash)
 
 	bot.on("disconnected", function ()
 	{
-		logger.info("Disconnected!");
-		throw new Error("Gateway Closed");
+		logger.info("Gateway Disconnected!");
+		// TODO: Fix crashing
 	});
 	//endregion
 
@@ -363,6 +378,8 @@ var _StartBot = function (didCrash)
 		{
 			message = "```" + message + "```";
 		}
+
+		message = message.replace("%botname%", bot.name);
 
 		bot.sendMessage({
 			to:      id,
@@ -443,8 +460,8 @@ var _StartBot = function (didCrash)
 
 					LoadLocalCommands();
 				});
-				
-				function LoadLocalCommands()
+
+				function LoadLocalCommands ()
 				{
 					fs.readFile("commands.json", function (err, data)
 					{
