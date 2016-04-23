@@ -1,7 +1,8 @@
 /**
  * Created by bq on 2016-01-15.
  */
-
+"use strict";
+	
 var http = require("http");
 
 var baseURL = "http://api.urbandictionary.com/v0/define?term=";

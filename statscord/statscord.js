@@ -1,7 +1,8 @@
 /**
  * Created by bq on 2016-02-16.
  */
-
+"use strict";
+	
 var util = require("util");
 var MySQL = require("mysql");
 var EE = require("events").EventEmitter;
@@ -14,6 +15,12 @@ function Statscord (interval, database)
 		user:     database.user,
 		password: database.password,
 		database: database.database
+	});
+
+	mysql.on('error', function (err)
+	{
+		console.error(err);
+		mysql.connect();
 	});
 
 	var self = this;

@@ -25,13 +25,11 @@ var express    = require("express"),
     mDiscordIO = require("discord.io"),
     mStatscord = require("./statscord/statscord"),
     mRemindMe  = require("./remind-me/remind-me"),
-    mSDB       = require("./plugins/steamdb-irc-checker/sdb"),
     ServerInfo = require("./serverInfo");
 
 var bot,
     statscord,
     remindMe,
-    sdb,
     config,
     debugMode  = false,
     ASSEMBLING = false;
@@ -161,18 +159,6 @@ fs.readFile("config.json", function (err, res)
 				});
 				//endregion
 
-				/*//region SDB
-				sdb = new mSDB();
-				sdb.on("error", function (err)
-				{
-					logger.error("sdb encountered an error:\n" + JSON.stringify(err, null, 2));
-				});
-				sdb.on("log", function (log)
-				{
-					logger.info("sdb: " + log);
-				});
-				//endregion*/
-				
 				try
 				{
 					_StartBot();

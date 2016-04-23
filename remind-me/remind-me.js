@@ -1,6 +1,7 @@
 /**
  * Created by bq on 2015-11-20.
  */
+"use strict";
 
 /*
  *  reminder format
@@ -26,6 +27,12 @@ function RemindMe (database)
 		password:           database.password,
 		database:           database.database,
 		multipleStatements: true
+	});
+	
+	mysql.on('error', function (err)
+	{
+		console.error(err);
+		mysql.connect();
 	});
 
 	var self = this;
