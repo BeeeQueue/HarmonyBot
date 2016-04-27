@@ -636,7 +636,7 @@ var _StartBot = function (didCrash)
 	ImageResponse = function (data)
 	{
 		bot.uploadFile({
-			"file": fs.createReadStream("img/" + data.image),
+			"file": "img/" + data.image,
 			"to":   data.channelID
 		});
 	};
