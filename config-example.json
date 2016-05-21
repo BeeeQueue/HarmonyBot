@@ -4,14 +4,19 @@
   "port": 3000,
   "game": "the game of life",
   "statscord": false,
-  "statsInterval": 6 0,
+  "statsInterval": 60,
   "databases": {
     "statscord": {
       "host": "hostIP",
       "user": "user",
       "password": "password",
       "database": "schema",
-      "table":"table"
+      "table": "table"
     }
+  },
+  "assemble": {
+    "csgo": [],
+    "siege": [],
+    "overwatch": []
   }
 }
