@@ -896,7 +896,7 @@ var _StartBot = function (didCrash) {
                         message += "\n<@" + config.assemble[game][i] + ">";
                     }
 
-                    send(message, false);
+                    SendMessage(message, '184032070761316352', false);
                 }
                 else {
                     send('Invalid game');
