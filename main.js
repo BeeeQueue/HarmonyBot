@@ -889,13 +889,18 @@ var _StartBot = function (didCrash) {
             }
             else { // Not starts with "-"
                 game = data.pars[0].toLowerCase();
-                message = "DUCKS, ASSEMBLE FOR " + game.toUpperCase() + "!";
+                if (config.assemble[game]) {
+                    message = "DUCKS, ASSEMBLE FOR " + game.toUpperCase() + "!";
 
-                for (var i = 0; i < config.assemble[game].length; i++) {
-                    message += "\n<@" + config.assemble[game][i] + ">";
+                    for (var i = 0; i < config.assemble[game].length; i++) {
+                        message += "\n<@" + config.assemble[game][i] + ">";
+                    }
+
+                    send(message, false);
                 }
-
-                send(message, false);
+                else {
+                    send('Invalid game');
+                }
             }
         }
         else {
