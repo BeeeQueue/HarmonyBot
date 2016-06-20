@@ -919,6 +919,10 @@ var _StartBot = function (didCrash) {
      */
     //endregion
 
+    setInterval(function () {
+        bot.setPresence({idle_since: null});
+    }, 1000 * 60 * 5);
+
 
     http.listen(config.port, function () {
         require('dns').lookup(require('os').hostname(), function (err, add) {
