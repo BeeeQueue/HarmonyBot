@@ -717,7 +717,7 @@ var _StartBot = function (didCrash) {
         }
     };
 
-    CancelReminder = function (data) {
+    RemindMeCancel = function (data) {
         remindMe.removeReminder(data);
     };
 
