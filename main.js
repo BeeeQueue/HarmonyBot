@@ -12,7 +12,7 @@ var express    = require("express"),
     fs         = require("fs"),
     winston    = require("winston"),
     urban      = require("./urban-dictionary/urban-node"),
-    mDiscordIO = require("discord.io"),
+    Discord    = require("discord.io"),
     mStatscord = require("./statscord/statscord"),
     mRemindMe  = require("./remind-me/remind-me"),
     ServerInfo = require("./serverInfo");
@@ -95,13 +95,13 @@ fs.readFile("config.json", function (err, res) {
         }
         else {
             if (config.token) {
-                bot = new mDiscordIO({
+                bot =  new Discord.Client({
                     token:   config.token,
                     autorun: true
                 });
             }
             else {
-                bot = new mDiscordIO({
+                bot = new Discord.Client({
                     email:    config.email,
                     password: config.password,
                     autorun:  true
